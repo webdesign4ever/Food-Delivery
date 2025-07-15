@@ -16,6 +16,7 @@ export default function Navbar() {
         { name: "Home", href: "/" },
         { name: "Products", href: "/products" },
         { name: "How It Works", href: "/how-it-works" },
+        { name: "Services", href: "/services" },
         { name: "Contact", href: "/contact" },
         { name: "About", href: "/about" },
         { name: "FAQ", href: "/faq" },
@@ -29,10 +30,7 @@ export default function Navbar() {
         const activeClasses = isActive ? "text-fresh-green" : "text-dark-text";
 
         return (
-            <Link
-                href={href}
-                className={`${baseClasses} ${activeClasses}`}
-                onClick={() => mobile && setIsOpen(false)}>
+            <Link href={href} className={`${baseClasses} ${activeClasses}`} onClick={() => mobile && setIsOpen(false)}>
                 {/* <a className={`${baseClasses} ${activeClasses}`} onClick={() => mobile && setIsOpen(false)}> */}
                 {children}
                 {/* </a> */}

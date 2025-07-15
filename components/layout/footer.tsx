@@ -8,6 +8,7 @@ export default function Footer() {
     { name: "Home", href: "/" },
     { name: "Products", href: "/products" },
     { name: "How It Works", href: "/how-it-works" },
+    { name: "Services", href: "/services" },
     { name: "Contact Us", href: "/contact" },
     { name: "About Us", href: "/about" },
     { name: "FAQ", href: "/faq" },

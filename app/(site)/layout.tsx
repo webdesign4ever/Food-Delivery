@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-// import "./globals.css";
 import "../globals.css";
 import Navbar from "@/components/layout/navbar";
 import Footer from "@/components/layout/footer";
+import ClientProvider from "@/components/shared/ClientProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -20,21 +20,19 @@ export const metadata: Metadata = {
   description: "Order fresh organic fruits and vegetables online in Pakistan. Customizable boxes with same-day delivery. Payment via Easypaisa & JazzCash. Serving Lahore, Karachi, Islamabad & Rawalpindi",
 };
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+export default function RootLayout({ children, }: Readonly<{ children: React.ReactNode; }>) {
   return (
     <html lang="en">
       <body className={`min-h-screen flex flex-col`
         // ${geistSans.variable} ${geistMono.variable} antialiased
       }>
-        <Navbar />
-        <main className="flex-1">
-          {children}
-        </main>
-        <Footer />
+        <ClientProvider>
+          <Navbar />
+          <main className="flex-1">
+            {children}
+          </main>
+          <Footer />
+        </ClientProvider>
       </body>
     </html>
   );

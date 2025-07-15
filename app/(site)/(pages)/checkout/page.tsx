@@ -1,9 +1,10 @@
+import Checkout from '@/components/checkout'
 import React from 'react'
 
 const CheckoutPage = () => {
     return (
         <main>
-            CheckoutPage
+            <Checkout />
         </main>
     )
 }
