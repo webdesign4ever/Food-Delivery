@@ -2,6 +2,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Leaf, Apple, Package } from "lucide-react";
 import type { BoxType } from "@/lib/types";
+import Link from "next/link";
 
 interface BoxSelectorProps {
   boxTypes: BoxType[];
@@ -84,11 +85,13 @@ export default function BoxSelector({ boxTypes, onSelectBox }: BoxSelectorProps)
                 </li>
               </ul>
 
-              <Button
-                className={`w-full ${getBgColorClass(index)} hover:opacity-90 text-white group-hover:shadow-lg transition-all`}
-              >
-                Select This Box
-              </Button>
+              <Link href={`/products?boxId=${box.id}`}>
+                <Button
+                  className={`w-full ${getBgColorClass(index)} hover:opacity-90 text-white group-hover:shadow-lg transition-all`}
+                >
+                  Select This Box
+                </Button>
+              </Link>
             </CardContent>
           </Card>
         ))}

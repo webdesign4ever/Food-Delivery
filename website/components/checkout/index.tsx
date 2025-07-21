@@ -1,6 +1,6 @@
 'use client'
 import { useState } from "react";
-//import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 //import { useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -12,10 +12,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 //import { zodResolver } from "@hookform/resolvers/zod";
 //import { z } from "zod";
 import { useToast } from "@/hooks/use-toast";
-//import { queryClient } from "@/lib/queryClient";
-import type { BoxType, Product, CartItem, Customer, OrderData } from "@/lib/types";
+import type { BoxType, CartItem, Customer, OrderData } from "@/lib/types";
 import { Download, FileText, ArrowLeft } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { BASE_URL, queryClient } from "@/lib/queryClient";
 
 // const customerSchema = z.object({
 //     firstName: z.string().min(1, "First name is required"),
@@ -29,6 +29,19 @@ import { useRouter } from "next/navigation";
 // });
 
 // type CustomerFormData = z.infer<typeof customerSchema>;
+
+export type PaymentMethod = "easypaisa" | "jazzcash";
+
+export interface CustomerFormData {
+    firstName: string;
+    lastName: string;
+    email: string;
+    phone: string;
+    address: string;
+    city: string;
+    paymentMethod: PaymentMethod;
+    specialInstructions?: string;
+}
 
 interface Receipt {
     id: number;
@@ -52,16 +65,20 @@ const Checkout = () => {
     const [receipt, setReceipt] = useState<Receipt | null>(null);
     const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
 
-    // Get cart data from URL params or localStorage
-    const urlParams = new URLSearchParams(window.location.search);
-    const boxId = urlParams.get('boxId');
-    const cartData = localStorage.getItem('cartItems');
-    const cartItems: CartItem[] = cartData ? JSON.parse(cartData) : [];
+    let boxId: string | null = null;
+    let cartItems: CartItem[] = [];
 
-    const boxTypes: BoxType[] = []
-    // const { data: boxTypes = [] } = useQuery<BoxType[]>({
-    //     queryKey: ["/api/box-types"],
-    // });
+    // Get cart data from URL params or localStorage
+    if (typeof window !== "undefined") {
+        const urlParams = new URLSearchParams(window.location.search);
+        boxId = urlParams.get('boxId');
+        const cartData = localStorage.getItem('cartItems');
+        cartItems = cartData ? JSON.parse(cartData) : [];
+    }
+
+    const { data: boxTypes = [] } = useQuery<BoxType[]>({
+        queryKey: ["/bag-types"],
+    });
 
     const selectedBox = boxTypes.find(box => box.id === parseInt(boxId || '0'));
 
@@ -79,6 +96,60 @@ const Checkout = () => {
     //     },
     // });
 
+    const [formData, setFormData] = useState<CustomerFormData>({
+        firstName: "",
+        lastName: "",
+        email: "",
+        phone: "",
+        address: "",
+        city: "",
+        paymentMethod: "easypaisa",
+        specialInstructions: "",
+    })
+
+    const [errors, setErrors] = useState<Record<string, string>>({})
+
+    const handleChange = (field: string, value: string) => {
+        setFormData({ ...formData, [field]: value })
+        setErrors({ ...errors, [field]: "" }) // Clear error on change
+    }
+
+    const validate = () => {
+        const newErrors: Record<string, string> = {}
+
+        if (!formData.firstName || formData.firstName.trim().length < 1) {
+            newErrors.firstName = "First name is required";
+        }
+
+        if (!formData.lastName || formData.lastName.trim().length < 1) {
+            newErrors.lastName = "Last name is required";
+        }
+
+        if (!formData.email || !/^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$/.test(formData.email.trim())) {
+            newErrors.email = "Valid email is required";
+        }
+
+        if (!formData.phone || formData.phone.trim().length < 11) {
+            newErrors.phone = "Valid phone number is required";
+        }
+
+        if (!formData.address || formData.address.trim().length < 10) {
+            newErrors.address = "Complete address is required";
+        }
+
+        if (!formData.city || formData.city.trim().length < 1) {
+            newErrors.city = "City is required";
+        }
+
+        if (!formData.paymentMethod || !["easypaisa", "jazzcash"].includes(formData.paymentMethod)) {
+            newErrors.paymentMethod = "Payment method must be Easypaisa or JazzCash";
+        }
+
+        setErrors(newErrors)
+
+        return Object.keys(newErrors).length === 0
+    }
+
     const calculateTotal = () => {
         // Only calculate the cost of added items, no box price
         return cartItems.reduce((sum, item) => {
@@ -92,96 +163,104 @@ const Checkout = () => {
         }, 0).toFixed(2);
     };
 
-    // const createOrderMutation = useMutation({
-    //     mutationFn: async (orderData: OrderData) => {
-    //         const response = await fetch("/api/orders", {
-    //             method: "POST",
-    //             headers: {
-    //                 "Content-Type": "application/json",
-    //             },
-    //             body: JSON.stringify(orderData),
-    //         });
+    const createOrderMutation = useMutation({
+        mutationFn: async (orderData: OrderData) => {
+            const response = await fetch(`${BASE_URL}/orders`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(orderData),
+            });
 
-    //         if (!response.ok) {
-    //             throw new Error("Failed to create order");
-    //         }
+            if (!response.ok) {
+                throw new Error("Failed to create order");
+            }
 
-    //         return await response.json();
-    //     },
-    //     onSuccess: (data) => {
-    //         const newReceipt: Receipt = {
-    //             id: data.id,
-    //             orderNumber: `FB${String(data.id).padStart(6, '0')}`,
-    //             customer: {
-    //                 firstName: form.getValues('firstName'),
-    //                 lastName: form.getValues('lastName'),
-    //                 email: form.getValues('email'),
-    //                 phone: form.getValues('phone'),
-    //                 address: form.getValues('address'),
-    //                 city: form.getValues('city'),
-    //             },
-    //             boxType: selectedBox!,
-    //             items: cartItems,
-    //             subtotal: calculateSubtotal(),
-    //             boxPrice: "0.00",
-    //             total: calculateTotal(),
-    //             paymentMethod: form.getValues('paymentMethod'),
-    //             orderDate: new Date().toLocaleDateString(),
-    //             deliveryDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toLocaleDateString(),
-    //         };
+            return await response.json();
+        },
+        onSuccess: (data) => {
+            const newReceipt: Receipt = {
+                id: data.id,
+                orderNumber: `FB${String(data.id).padStart(6, '0')}`,
+                customer: {
+                    firstName: formData.firstName,
+                    lastName: formData.lastName,
+                    email: formData.email,
+                    phone: formData.phone,
+                    address: formData.address,
+                    city: formData.city,
+                },
+                boxType: selectedBox!,
+                items: cartItems,
+                subtotal: calculateSubtotal(),
+                boxPrice: "0.00",
+                total: calculateTotal(),
+                //paymentMethod: form.getValues('paymentMethod'),
+                paymentMethod: formData.paymentMethod,
+                orderDate: new Date().toLocaleDateString(),
+                deliveryDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toLocaleDateString(),
+            };
 
-    //         setReceipt(newReceipt);
-    //         localStorage.removeItem('cartItems');
+            setReceipt(newReceipt);
+            localStorage.removeItem('cartItems');
 
-    //         // Invalidate stats cache to update counters on home page
-    //         queryClient.invalidateQueries({ queryKey: ["/api/stats"] });
+            // Invalidate stats cache to update counters on home page
+            queryClient.invalidateQueries({ queryKey: ["/stats"] });
 
-    //         toast({
-    //             title: "Order Placed Successfully!",
-    //             description: "Your fresh box order has been confirmed.",
-    //         });
-    //     },
-    //     onError: () => {
-    //         toast({
-    //             title: "Order Failed",
-    //             description: "Please try again or contact support.",
-    //             variant: "destructive",
-    //         });
-    //     },
-    // });
+            toast({
+                title: "Order Placed Successfully!",
+                description: "Your fresh box order has been confirmed.",
+            });
+        },
+        onError: () => {
+            toast({
+                title: "Order Failed",
+                description: "Please try again or contact support.",
+                variant: "destructive",
+            });
+        },
+    });
 
-    // const onSubmit = (data: CustomerFormData) => {
-    //     if (!selectedBox || cartItems.length === 0) {
-    //         toast({
-    //             title: "Invalid Order",
-    //             description: "Please add items to your cart first.",
-    //             variant: "destructive",
-    //         });
-    //         return;
-    //     }
+    //const onSubmit = (data: CustomerFormData) => {
+    const onSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
 
-    //     const orderData: OrderData = {
-    //         customer: {
-    //             firstName: data.firstName,
-    //             lastName: data.lastName,
-    //             email: data.email,
-    //             phone: data.phone,
-    //             address: data.address,
-    //             city: data.city,
-    //         },
-    //         boxTypeId: selectedBox.id,
-    //         totalAmount: calculateTotal(),
-    //         paymentMethod: data.paymentMethod,
-    //         specialInstructions: data.specialInstructions,
-    //         items: cartItems.map(item => ({
-    //             productId: item.product.id,
-    //             quantity: item.quantity.toString(),
-    //             unitPrice: item.product.price,
-    //         })),
-    //     };
+        if (!selectedBox || cartItems.length === 0) {
+            toast({
+                title: "Invalid Order",
+                description: "Please add items to your cart first.",
+                variant: "destructive",
+            });
+            return;
+        }
 
-    //     createOrderMutation.mutate(orderData);
-    // };
+        if (!validate()) return;
+
+        const orderData: OrderData = {
+            customer: {
+                firstName: formData.firstName,
+                lastName: formData.lastName,
+                email: formData.email,
+                phone: formData.phone,
+                address: formData.address,
+                city: formData.city,
+            },
+            bagTypeId: selectedBox.id,
+            totalAmount: calculateTotal(),
+            paymentMethod: formData.paymentMethod,
+            specialInstructions: formData.specialInstructions,
+            // paymentMethod: data.paymentMethod,
+            // specialInstructions: data.specialInstructions,
+            items: cartItems.map(item => ({
+                productId: item.product.id,
+                quantity: item.quantity.toString(),
+                unitPrice: item.product.price,
+            })),
+        };
+
+        createOrderMutation.mutate(orderData);
+    };
 
     const generatePDF = async () => {
         if (!receipt) return;
@@ -285,6 +364,7 @@ const Checkout = () => {
             printWindow.print();
 
         } catch (error) {
+            console.error("PDF Generation Error:", error);
             toast({
                 title: "PDF Generation Failed",
                 description: "Please try again or contact support.",
@@ -462,7 +542,7 @@ const Checkout = () => {
                             <CardTitle>Delivery Information</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <form
+                            <form onSubmit={onSubmit}
                                 //onSubmit={form.handleSubmit(onSubmit)} 
                                 className="space-y-4">
                                 <div className="grid grid-cols-2 gap-4">
@@ -470,9 +550,14 @@ const Checkout = () => {
                                         <Label htmlFor="firstName">First Name</Label>
                                         <Input
                                             id="firstName"
-                                            // {...form.register("firstName")}
+                                            value={formData.firstName}
+                                            onChange={(e) => handleChange("firstName", e.target.value)}
                                             className="mt-1"
+                                        // {...form.register("firstName")}
                                         />
+                                        {errors.firstName && (
+                                            <p className="text-red-500 text-sm mt-1">{errors.firstName}</p>
+                                        )}
                                         {/* {form.formState.errors.firstName && (
                                             <p className="text-red-500 text-sm mt-1">{form.formState.errors.firstName.message}</p>
                                         )} */}
@@ -481,9 +566,15 @@ const Checkout = () => {
                                         <Label htmlFor="lastName">Last Name</Label>
                                         <Input
                                             id="lastName"
-                                            // {...form.register("lastName")}
+                                            value={formData.lastName}
+                                            onChange={(e) => handleChange("lastName", e.target.value)}
                                             className="mt-1"
+                                        // {...form.register("lastName")}
+
                                         />
+                                        {errors.lastName && (
+                                            <p className="text-red-500 text-sm mt-1">{errors.lastName}</p>
+                                        )}
                                         {/* {form.formState.errors.lastName && (
                                             <p className="text-red-500 text-sm mt-1">{form.formState.errors.lastName.message}</p>
                                         )} */}
@@ -495,9 +586,15 @@ const Checkout = () => {
                                     <Input
                                         id="email"
                                         type="email"
-                                        // {...form.register("email")}
+                                        value={formData.email}
+                                        onChange={(e) => handleChange("email", e.target.value)}
                                         className="mt-1"
+                                    // {...form.register("email")}
+
                                     />
+                                    {errors.email && (
+                                        <p className="text-red-500 text-sm mt-1">{errors.email}</p>
+                                    )}
                                     {/* {form.formState.errors.email && (
                                         <p className="text-red-500 text-sm mt-1">{form.formState.errors.email.message}</p>
                                     )} */}
@@ -507,10 +604,15 @@ const Checkout = () => {
                                     <Label htmlFor="phone">Phone Number</Label>
                                     <Input
                                         id="phone"
-                                        // {...form.register("phone")}
+                                        value={formData.phone}
+                                        onChange={(e) => handleChange("phone", e.target.value)}
                                         placeholder="03XX-XXXXXXX"
                                         className="mt-1"
+                                    // {...form.register("phone")}
                                     />
+                                    {errors.phone && (
+                                        <p className="text-red-500 text-sm mt-1">{errors.phone}</p>
+                                    )}
                                     {/* {form.formState.errors.phone && (
                                         <p className="text-red-500 text-sm mt-1">{form.formState.errors.phone.message}</p>
                                     )} */}
@@ -520,10 +622,15 @@ const Checkout = () => {
                                     <Label htmlFor="address">Complete Address</Label>
                                     <Textarea
                                         id="address"
-                                        // {...form.register("address")}
+                                        value={formData.address}
+                                        onChange={(e) => handleChange("address", e.target.value)}
                                         placeholder="House/Flat number, Street, Area"
                                         className="mt-1"
+                                    // {...form.register("address")}
                                     />
+                                    {errors.address && (
+                                        <p className="text-red-500 text-sm mt-1">{errors.address}</p>
+                                    )}
                                     {/* {form.formState.errors.address && (
                                         <p className="text-red-500 text-sm mt-1">{form.formState.errors.address.message}</p>
                                     )} */}
@@ -533,9 +640,14 @@ const Checkout = () => {
                                     <Label htmlFor="city">City</Label>
                                     <Input
                                         id="city"
-                                        // {...form.register("city")}
+                                        value={formData.city}
+                                        onChange={(e) => handleChange("city", e.target.value)}
                                         className="mt-1"
+                                    // {...form.register("city")}
                                     />
+                                    {errors.city && (
+                                        <p className="text-red-500 text-sm mt-1">{errors.city}</p>
+                                    )}
                                     {/* {form.formState.errors.city && (
                                         <p className="text-red-500 text-sm mt-1">{form.formState.errors.city.message}</p>
                                     )} */}
@@ -544,6 +656,8 @@ const Checkout = () => {
                                 <div>
                                     <Label htmlFor="paymentMethod">Payment Method</Label>
                                     <Select
+                                        value={formData.paymentMethod}
+                                        onValueChange={(value) => handleChange("paymentMethod", value as "easypaisa" | "jazzcash")}
                                     // value={form.watch("paymentMethod")}
                                     // onValueChange={(value) => form.setValue("paymentMethod", value as "easypaisa" | "jazzcash")}
                                     >
@@ -555,24 +669,32 @@ const Checkout = () => {
                                             <SelectItem value="jazzcash">JazzCash</SelectItem>
                                         </SelectContent>
                                     </Select>
+                                    {/* {errors.paymentMethod && (
+                                        <p className="text-red-500 text-sm mt-1">{errors.paymentMethod}</p>
+                                    )} */}
                                 </div>
 
                                 <div>
                                     <Label htmlFor="specialInstructions">Special Instructions (Optional)</Label>
                                     <Textarea
                                         id="specialInstructions"
-                                        //{...form.register("specialInstructions")}
+                                        value={formData.specialInstructions}
+                                        onChange={(e) => handleChange("specialInstructions", e.target.value)}
                                         placeholder="Any special delivery instructions"
                                         className="mt-1"
+                                    //{...form.register("specialInstructions")}
                                     />
+                                    {/* {errors.specialInstructions && (
+                                        <p className="text-red-500 text-sm mt-1">{errors.specialInstructions}</p>
+                                    )} */}
                                 </div>
 
                                 <Button
                                     type="submit"
-                                    //disabled={createOrderMutation.isPending}
+                                    disabled={createOrderMutation.isPending}
                                     className="w-full bg-fresh-green text-white hover:bg-[hsla(103,38%,57%,0.9)]"
                                 >
-                                    {/* {createOrderMutation.isPending ? "Processing..." : "Place Order"} */}
+                                    {createOrderMutation.isPending ? "Processing..." : "Place Order"}
                                 </Button>
                             </form>
                         </CardContent>

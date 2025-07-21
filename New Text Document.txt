@@ -1,2 +1,4 @@
 http://localhost:3000/products?category=fruit  for getting products by using filters
 http://localhost:3000/products?available=true
+
+We can also insert products in bulk

@@ -36,7 +36,7 @@ export interface Customer {
 
 export interface OrderData {
   customer: Customer;
-  boxTypeId: number;
+  bagTypeId: number;
   totalAmount: string;
   paymentMethod: "easypaisa" | "jazzcash";
   deliveryDate?: string;

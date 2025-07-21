@@ -1,6 +1,6 @@
 'use client';
 import { useState } from "react";
-//import { useMutation } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 //import { useForm } from "react-hook-form";
 //import { zodResolver } from "@hookform/resolvers/zod";
 //import { z } from "zod";
@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { Phone, Mail, MapPin, MessageCircle, Send } from "lucide-react";
 import { FaWhatsapp } from "react-icons/fa";
-//import { apiRequest } from "@/lib/queryClient";
+import { apiRequest } from "@/lib/queryClient";
 
 // const contactFormSchema = z.object({
 //     firstName: z.string().min(2, "First name must be at least 2 characters"),
@@ -25,6 +25,15 @@ import { FaWhatsapp } from "react-icons/fa";
 // });
 
 //type ContactFormData = z.infer<typeof contactFormSchema>;
+
+export interface ContactFormData {
+    firstName: string;
+    lastName: string;
+    email: string;
+    phone: string;
+    subject: string;
+    message: string;
+}
 
 export default function Contact() {
     const [isLiveChatOpen, setIsLiveChatOpen] = useState(false);
@@ -78,62 +87,60 @@ export default function Contact() {
         return Object.keys(newErrors).length === 0
     }
 
-    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-        e.preventDefault()
+    // const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    //     e.preventDefault()
 
-        if (!validate()) {
-            toast({
-                title: "Validation Error",
-                description: "Please correct the errors in the form.",
-                variant: "destructive",
-            })
-            console.log(toast)
-            console.log("invalid")
-            return
-        }
+    //     if (!validate()) {
+    //         toast({
+    //             title: "Validation Error",
+    //             description: "Please correct the errors in the form.",
+    //             variant: "destructive",
+    //         })
+    //         return
+    //     }
 
-        console.log("Form submitted:", formData)
-        // TODO: Call API to send message
+    //     console.log("Form submitted:", formData)
+    //     // TODO: Call API to send message
 
-        // try {
-        //     // POST to API
-        //     const response = await fetch("/api/contact", {
-        //         method: "POST",
-        //         headers: {
-        //             "Content-Type": "application/json",
-        //         },
-        //         body: JSON.stringify(formData),
-        //     })
+    // try {
+    //     // POST to API
+    //     const response = await fetch("/api/contact", {
+    //         method: "POST",
+    //         headers: {
+    //             "Content-Type": "application/json",
+    //         },
+    //         body: JSON.stringify(formData),
+    //     })
 
-        //     if (!response.ok) {
-        //         throw new Error("Failed to send message")
-        //     }
+    //     if (!response.ok) {
+    //         throw new Error("Failed to send message")
+    //     }
 
-        //     // Success toast
-        //     toast({
-        //         title: "Message Sent!",
-        //         description: "Thank you for contacting us. We'll get back to you within 2 hours.",
-        //     })
+    //     // Success toast
+    //     toast({
+    //         title: "Message Sent!",
+    //         description: "Thank you for contacting us. We'll get back to you within 2 hours.",
+    //     })
 
-        //     // Reset form
-        //     setFormData({
-        //         firstName: "",
-        //         lastName: "",
-        //         email: "",
-        //         phone: "",
-        //         subject: "",
-        //         message: ""
-        //     })
-        //     setErrors({})
-        // } catch (error) {
-        //     console.error(error)
-        //     toast({
-        //         title: "Error",
-        //         description: "Failed to send message. Please try again.",
-        //         variant: "destructive",
-        //     })
-        // }
-    }
+    //     // Reset form
+    //     setFormData({
+    //         firstName: "",
+    //         lastName: "",
+    //         email: "",
+    //         phone: "",
+    //         subject: "",
+    //         message: ""
+    //     })
+    //     setErrors({})
+    // } catch (error) {
+    //     console.error(error)
+    //     toast({
+    //         title: "Error",
+    //         description: "Failed to send message. Please try again.",
+    //         variant: "destructive",
+    //     })
+    // }
+    //}
 
     // const form = useForm<ContactFormData>({
     //     resolver: zodResolver(contactFormSchema),
@@ -147,25 +154,49 @@ export default function Contact() {
     //     },
     // });
 
-    // const contactMutation = useMutation({
-    //     mutationFn: async (data: ContactFormData) => {
-    //         return apiRequest("POST", "/api/contact", data);
-    //     },
-    //     onSuccess: () => {
-    //         toast({
-    //             title: "Message Sent!",
-    //             description: "Thank you for contacting us. We'll get back to you within 2 hours.",
-    //         });
-    //         form.reset();
-    //     },
-    //     onError: () => {
-    //         toast({
-    //             title: "Error",
-    //             description: "Failed to send message. Please try again.",
-    //             variant: "destructive",
-    //         });
-    //     },
-    // });
+    const contactMutation = useMutation({
+        mutationFn: async (data: ContactFormData) => {
+            return apiRequest("POST", "/contact", data);
+        },
+        onSuccess: () => {
+            toast({
+                title: "Message Sent!",
+                description: "Thank you for contacting us. We'll get back to you within 2 hours.",
+            });
+            //form.reset();
+            // Reset form
+            setFormData({
+                firstName: "",
+                lastName: "",
+                email: "",
+                phone: "",
+                subject: "",
+                message: ""
+            })
+            setErrors({})
+        },
+        onError: () => {
+            toast({
+                title: "Error",
+                description: "Failed to send message. Please try again.",
+                variant: "destructive",
+            });
+        },
+    });
+
+    const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault()
+
+        if (!validate()) {
+            toast({
+                title: "Validation Error",
+                description: "Please correct the errors in the form.",
+                variant: "destructive",
+            })
+            return
+        }
+        contactMutation.mutate(formData);
+    }
 
     // const onSubmit = (data: ContactFormData) => {
     //     contactMutation.mutate(data);
@@ -264,7 +295,8 @@ export default function Contact() {
                         <CardContent className="p-8">
                             <h3 className="text-2xl font-bold text-dark-text mb-6">Send us a Message</h3>
 
-                            <Form onSubmit={handleSubmit}
+                            <Form onSubmit={onSubmit}
+                            //onSubmit={handleSubmit}
                             //{...form}
                             >
                                 {/* <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6"> */}

@@ -1,40 +1,51 @@
 'use client';
 import { useState, useEffect } from "react";
-// import { useQuery } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 // import { useLocation } from "wouter";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import BoxSelector from "@/components/product/box-selector";
 import ItemCustomizer from "@/components/product/item-customizer";
 import type { BoxType, Product, CartItem } from "@/lib/types";
-import { usePathname } from "next/navigation";
+import { BASE_URL } from "@/lib/queryClient";
+import Link from "next/link";
 
 export default function Products() {
     const [selectedBox, setSelectedBox] = useState<BoxType | null>(null);
     const [cartItems, setCartItems] = useState<CartItem[]>([]);
-    const pathname = usePathname();
+    const [autoSelected, setAutoSelected] = useState(false);
+    //const pathname = usePathname();
 
     //const [location] = useLocation();
-    const boxTypes: BoxType[] = []
-    // const { data: boxTypes = [] } = useQuery<BoxType[]>({
-    //     queryKey: ["/api/box-types"],
-    // });
+    const { data: boxTypes = [] } = useQuery<BoxType[]>({
+        queryKey: ["/bag-types"],
+    });
 
-    // const { data: products = [] } = useQuery<Product[]>({
-    //     queryKey: ["/api/products"],
-    //     queryFn: async () => {
-    //         const res = await fetch("/api/products?available=true");
-    //         if (!res.ok) throw new Error("Failed to fetch products");
-    //         return res.json();
-    //     },
-    // });
+    const { data: products = [] } = useQuery<Product[]>({
+        queryKey: ["/products"],
+        queryFn: async () => {
+            const res = await fetch(`${BASE_URL}/products?available=true`);
+            if (!res.ok) throw new Error("Failed to fetch products");
+            return res.json();
+        },
+    });
 
-    // const fruits = products.filter(p => p.category === "fruit");
-    // const vegetables = products.filter(p => p.category === "vegetable");
+    const fruits = products.filter(p => p.category === "fruit");
+    const vegetables = products.filter(p => p.category === "vegetable");
 
     // Auto-select box if boxId is provided in URL
-    // useEffect(() => {
-    //     const urlParams = new URLSearchParams(window.location.search);
-    //     const boxId = urlParams.get('boxId');
+    useEffect(() => {
+        if (autoSelected) return;
+        const urlParams = new URLSearchParams(window.location.search);
+        const boxId = urlParams.get('boxId');
+
+        if (boxId && boxTypes.length > 0) {
+            const box = boxTypes.find(b => b.id === parseInt(boxId));
+            if (box) {
+                setSelectedBox(box);
+                setAutoSelected(true);
+            }
+        }
+    }, [boxTypes, autoSelected]);
 
     //     if (boxId && boxTypes.length > 0 && !selectedBox) {
     //         const box = boxTypes.find(b => b.id === parseInt(boxId));
@@ -113,7 +124,9 @@ export default function Products() {
                                             <p className="text-gray-600">{selectedBox.description}</p>
                                         </div>
                                         <button
-                                            onClick={() => setSelectedBox(null)}
+                                            onClick={() => {
+                                                setSelectedBox(null)
+                                            }}
                                             className="text-fresh-green hover:opacity-80 font-medium"
                                         >
                                             Change Box
@@ -130,7 +143,7 @@ export default function Products() {
 
                                     <TabsContent value="all" className="mt-6">
                                         <ItemCustomizer
-                                            //products={products}
+                                            products={products}
                                             onAddToCart={addToCart}
                                             cartItems={cartItems}
                                         />
@@ -138,7 +151,7 @@ export default function Products() {
 
                                     <TabsContent value="fruits" className="mt-6">
                                         <ItemCustomizer
-                                            //products={fruits}
+                                            products={fruits}
                                             onAddToCart={addToCart}
                                             cartItems={cartItems}
                                         />
@@ -146,7 +159,7 @@ export default function Products() {
 
                                     <TabsContent value="vegetables" className="mt-6">
                                         <ItemCustomizer
-                                            //products={vegetables}
+                                            products={vegetables}
                                             onAddToCart={addToCart}
                                             cartItems={cartItems}
                                         />
@@ -211,20 +224,37 @@ export default function Products() {
                                         <span className="text-fresh-green">Rs. {calculateTotal()}</span>
                                     </div>
 
-                                    <button
-                                        disabled={cartItems.length === 0}
+                                    {/* <Link href={`/checkout?boxId=${boxTypes.length > 0 ? boxTypes[0].id : 1}`}>
+                                        <button
+                                            disabled={cartItems.length === 0}
+                                            onClick={() => {
+                                                if (cartItems.length > 0) {
+                                                    if (typeof window !== "undefined") {
+                                                        localStorage.setItem('cartItems', JSON.stringify(cartItems));
+                                                    }
+                                                    // Use the first available box type for checkout since this is now a mixed order
+                                                    //const boxId = boxTypes.length > 0 ? boxTypes[0].id : 1;
+                                                    //window.location.href = `/checkout?boxId=${boxId}`;
+                                                }
+                                            }
+                                            }
+                                            className="w-full bg-fresh-green text-white py-3 rounded-xl font-semibold hover:opacity-90 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+                                        >
+                                            Proceed to Checkout
+                                        </button>
+                                    </Link> */}
+                                    <Link href={`/checkout?boxId=${boxTypes.length > 0 ? boxTypes[0].id : 1}`}
                                         onClick={() => {
                                             if (cartItems.length > 0) {
-                                                localStorage.setItem('cartItems', JSON.stringify(cartItems));
-                                                // Use the first available box type for checkout since this is now a mixed order
-                                                const boxId = boxTypes.length > 0 ? boxTypes[0].id : 1;
-                                                window.location.href = `/checkout?boxId=${boxId}`;
+                                                if (typeof window !== "undefined") {
+                                                    localStorage.setItem('cartItems', JSON.stringify(cartItems));
+                                                }
                                             }
                                         }}
-                                        className="w-full bg-fresh-green text-white py-3 rounded-xl font-semibold hover:opacity-90 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+                                        className={`w-full bg-fresh-green text-white py-3 rounded-xl font-semibold hover:opacity-90 block text-center  transition-colors ${cartItems.length === 0 ? "bg-gray-300 cursor-not-allowed" : ""}`}
                                     >
                                         Proceed to Checkout
-                                    </button>
+                                    </Link>
                                 </div>
                             </div>
                         </div>
