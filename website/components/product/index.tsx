@@ -243,7 +243,7 @@ export default function Products() {
                                             Proceed to Checkout
                                         </button>
                                     </Link> */}
-                                    <Link href={`/checkout?boxId=${boxTypes.length > 0 ? boxTypes[0].id : 1}`}
+                                    <Link href={`/checkout?boxId=${selectedBox ? selectedBox.id : 1}`}
                                         onClick={() => {
                                             if (cartItems.length > 0) {
                                                 if (typeof window !== "undefined") {

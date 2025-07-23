@@ -54,7 +54,7 @@ interface Receipt {
     total: string;
     paymentMethod: string;
     orderDate: string;
-    deliveryDate: string;
+    // deliveryDate: string;
 }
 
 const Checkout = () => {
@@ -182,7 +182,7 @@ const Checkout = () => {
         onSuccess: (data) => {
             const newReceipt: Receipt = {
                 id: data.id,
-                orderNumber: `FB${String(data.id).padStart(6, '0')}`,
+                orderNumber: `FB${String(data.id).padStart(3, '0')}`,
                 customer: {
                     firstName: formData.firstName,
                     lastName: formData.lastName,
@@ -199,7 +199,7 @@ const Checkout = () => {
                 //paymentMethod: form.getValues('paymentMethod'),
                 paymentMethod: formData.paymentMethod,
                 orderDate: new Date().toLocaleDateString(),
-                deliveryDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toLocaleDateString(),
+                //deliveryDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toLocaleDateString(),
             };
 
             setReceipt(newReceipt);
@@ -305,7 +305,6 @@ const Checkout = () => {
             <h3>Order Information</h3>
             <p><strong>Order Number:</strong> ${receipt.orderNumber}</p>
             <p><strong>Order Date:</strong> ${receipt.orderDate}</p>
-            <p><strong>Estimated Delivery:</strong> ${receipt.deliveryDate}</p>
             <p><strong>Payment Method:</strong> ${receipt.paymentMethod.toUpperCase()}</p>
           </div>
           
@@ -391,7 +390,7 @@ const Checkout = () => {
                                 <div className="space-y-1 text-sm">
                                     <p><span className="font-medium">Order Number:</span> {receipt.orderNumber}</p>
                                     <p><span className="font-medium">Order Date:</span> {receipt.orderDate}</p>
-                                    <p><span className="font-medium">Estimated Delivery:</span> {receipt.deliveryDate}</p>
+                                    {/* <p><span className="font-medium">Estimated Delivery:</span> {receipt.deliveryDate}</p> */}
                                     <p><span className="font-medium">Payment Method:</span> {receipt.paymentMethod.toUpperCase()}</p>
                                 </div>
                             </div>

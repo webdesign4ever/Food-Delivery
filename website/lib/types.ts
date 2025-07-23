@@ -19,6 +19,18 @@ export interface Product {
   nutritionInfo?: any;
 }
 
+export interface ProductForm {
+  id?: number;
+  name: string;
+  category: "fruit" | "vegetable";
+  price: string;
+  unit: string;
+  imageUrl?: string | null;
+  description?: string;
+  isAvailable: boolean;
+  nutritionInfo?: any;
+}
+
 export interface CartItem {
   product: Product;
   quantity: number;
@@ -32,6 +44,19 @@ export interface Customer {
   phone: string;
   address: string;
   city: string;
+}
+
+export interface Order {
+  id: number;
+  customerId: number;
+  bagTypeId: number;
+  totalAmount: string; // because Drizzle `decimal` maps to string
+  paymentMethod: "easypaisa" | "jazzcash";
+  paymentStatus: "pending" | "completed" | "failed";
+  orderStatus: "processing" | "confirmed" | "delivered" | "cancelled";
+  deliveryDate: Date | null;
+  specialInstructions: string | null;
+  createdAt: Date;
 }
 
 export interface OrderData {

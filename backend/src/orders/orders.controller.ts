@@ -26,7 +26,7 @@ export class OrdersController {
                 totalAmount: body.totalAmount,
                 paymentMethod: body.paymentMethod,
                 specialInstructions: body.specialInstructions,
-                orderStatus: 'pending',
+                orderStatus: 'processing',
                 paymentStatus: 'pending',
             });
 
