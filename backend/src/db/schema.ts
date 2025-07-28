@@ -1,5 +1,5 @@
 import { relations } from "drizzle-orm";
-import { boolean, decimal, integer, json, pgTable, serial, text, timestamp, varchar } from "drizzle-orm/pg-core";
+import { boolean, decimal, integer, json, pgTable, primaryKey, serial, text, timestamp, varchar } from "drizzle-orm/pg-core";
 
 export const users = pgTable("users", {
     id: serial("id").primaryKey(),
@@ -10,14 +10,39 @@ export const users = pgTable("users", {
     createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// export const bagTypes = pgTable("bag_types", {
+//     id: serial("id").primaryKey(),
+//     name: text("name").notNull(),
+//     price: decimal("price", { precision: 10, scale: 2 }).notNull(),
+//     itemsLimit: integer("items_limit").notNull(),
+//     description: text("description"),
+//     isActive: boolean("is_active").default(true).notNull(),
+// });
+
 export const bagTypes = pgTable("bag_types", {
     id: serial("id").primaryKey(),
     name: text("name").notNull(),
+    category: text("category").notNull(), // fruit or vegetable
     price: decimal("price", { precision: 10, scale: 2 }).notNull(),
     itemsLimit: integer("items_limit").notNull(),
     description: text("description"),
     isActive: boolean("is_active").default(true).notNull(),
 });
+
+// ✅ Step 2: Many-to-many relation tables
+export const bagFixedItems = pgTable("bag_fixed_items", {
+    bagTypeId: integer("bag_type_id").notNull().references(() => bagTypes.id, { onDelete: "cascade" }),
+    productId: integer("product_id").notNull().references(() => products.id, { onDelete: "cascade" }),
+}, (t) => [
+    primaryKey({ columns: [t.bagTypeId, t.productId] }),
+])
+
+export const bagCustomizableItems = pgTable("bag_customizable_items", {
+    bagTypeId: integer("bag_type_id").notNull().references(() => bagTypes.id, { onDelete: "cascade" }),
+    productId: integer("product_id").notNull().references(() => products.id, { onDelete: "cascade" }),
+}, (t) => [
+    primaryKey({ columns: [t.bagTypeId, t.productId] }),
+])
 
 export const products = pgTable("products", {
     id: serial("id").primaryKey(),
@@ -177,9 +202,37 @@ export const orderItemsRelations = relations(orderItems, ({ one }) => ({
     }),
 }));
 
+// export const bagTypesRelations = relations(bagTypes, ({ many }) => ({
+//     orders: many(orders),
+// }));
+
 export const bagTypesRelations = relations(bagTypes, ({ many }) => ({
     orders: many(orders),
-}));
+    fixedItems: many(bagFixedItems),
+    customizableItems: many(bagCustomizableItems),
+}))
+
+export const bagFixedItemsRelations = relations(bagFixedItems, ({ one }) => ({
+    bagType: one(bagTypes, {
+        fields: [bagFixedItems.bagTypeId],
+        references: [bagTypes.id],
+    }),
+    product: one(products, {
+        fields: [bagFixedItems.productId],
+        references: [products.id],
+    }),
+}))
+
+export const bagCustomizableItemsRelations = relations(bagCustomizableItems, ({ one }) => ({
+    bagType: one(bagTypes, {
+        fields: [bagCustomizableItems.bagTypeId],
+        references: [bagTypes.id],
+    }),
+    product: one(products, {
+        fields: [bagCustomizableItems.productId],
+        references: [products.id],
+    }),
+}))
 
 export const productsRelations = relations(products, ({ many }) => ({
     orderItems: many(orderItems),

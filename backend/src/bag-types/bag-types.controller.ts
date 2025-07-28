@@ -1,4 +1,4 @@
-import { Body, Controller, Get, HttpException, HttpStatus, NotFoundException, Param, ParseIntPipe, Post, Put } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpException, HttpStatus, NotFoundException, Param, ParseIntPipe, Post, Put } from '@nestjs/common';
 import { BagTypesService } from './bag-types.service';
 import { BagType } from 'src/db/schema';
 
@@ -36,6 +36,21 @@ export class BagTypesController {
             return updated;
         } catch {
             throw new HttpException({ message: 'Failed to update bag type' }, HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    @Delete(':id')
+    async deleteBag(@Param('id', ParseIntPipe) id: number) {
+        try {
+            const deleted = await this.bagTypesService.deleteBag(id);
+            if (!deleted) {
+                throw new NotFoundException({ message: 'Bag not found' });
+            }
+            return { message: 'Bag deleted successfully' };
+        } catch (err) {
+            console.log(err)
+            if (err instanceof NotFoundException) throw err;
+            throw new HttpException({ message: 'Failed to delete bag' }, HttpStatus.BAD_REQUEST);
         }
     }
 }

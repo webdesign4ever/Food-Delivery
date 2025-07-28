@@ -59,6 +59,7 @@ export class ProductsController {
             }
             return { message: 'Product deleted successfully' };
         } catch (err) {
+            console.log(err)
             if (err instanceof NotFoundException) throw err;
             throw new HttpException({ message: 'Failed to delete product' }, HttpStatus.BAD_REQUEST);
         }

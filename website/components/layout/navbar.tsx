@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 //import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Menu, Leaf } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -84,6 +84,16 @@ export default function Navbar() {
                                 </Button>
                             </SheetTrigger>
                             <SheetContent side="right">
+                                <SheetHeader className="hidden">
+                                    <SheetTitle className=" flex items-center space-x-2">
+                                        <div className="w-10 h-10 gradient-green-yellow rounded-lg flex items-center justify-center">
+                                            <Leaf className="text-white text-xl" />
+                                        </div>
+                                        <span className="text-2xl font-bold text-fresh-green">FreshBox</span>
+                                    </SheetTitle>
+                                    <SheetDescription>
+                                    </SheetDescription>
+                                </SheetHeader>
                                 <div className="flex flex-col space-y-4 mt-6">
                                     {navigation.map((item) => (
                                         <NavLink key={item.name} href={item.href} mobile>
@@ -101,6 +111,6 @@ export default function Navbar() {
                     </div>
                 </div>
             </div>
-        </nav>
+        </nav >
     );
 }

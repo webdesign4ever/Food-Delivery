@@ -1,5 +1,5 @@
 'use client'
-import React, { useEffect } from 'react'
+import React, { useEffect, useRef } from 'react'
 import { useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -8,9 +8,9 @@ import { Badge } from "@/components/ui/badge";
 import AdminDashboard from "@/components/admin/admin-dashboard";
 import OrdersTable from "@/components/admin/orders-table";
 import BillingDashboard from "@/components/admin/billing-dashboard";
-import { Package, Plus, Download } from "lucide-react";
+import { Package, Plus, Download, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import type { OrderStats, Product, Customer, BoxType, Invoice, Payment, BillingRecord, Order, ProductForm } from "@/lib/types";
+import type { OrderStats, Product, Customer, BoxType, Invoice, Payment, BillingRecord, Order, ProductForm, BagForm } from "@/lib/types";
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '../ui/dialog';
 import { Input } from '../ui/input';
 import { Textarea } from '../ui/textarea';
@@ -18,6 +18,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog';
+import Image from 'next/image';
+import BagsManagement from './bags-management';
 
 const Admin = () => {
 
@@ -27,7 +29,7 @@ const Admin = () => {
         price: "",
         unit: "kg",
         imageUrl: null,
-        description: "",
+        description: null,
         isAvailable: true,
         // nutritionInfo: {
         //     calories: "",
@@ -42,12 +44,20 @@ const Admin = () => {
 
     const [productData, setProductData] = useState<ProductForm>(initialProductData);
 
+    const [errors, setErrors] = useState<Record<string, string>>({})
+
     const [editingProduct, setEditingProduct] = useState<null | ProductForm>(null);
+
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     const { toast } = useToast();
 
     const { data: stats, isLoading: statsLoading } = useQuery<OrderStats>({
         queryKey: ["/stats"],
+    });
+
+    const { data: bags = [], isLoading: bagsLoading } = useQuery<BagForm[]>({
+        queryKey: ["/bag-types"],
     });
 
     const { data: orders = [], isLoading: ordersLoading } = useQuery<
@@ -186,8 +196,33 @@ const Admin = () => {
         //     }));
         // } else {
         setProductData(prev => ({ ...prev, [field]: value }));
+        setErrors({ ...errors, [field]: "" })
         // }
     };
+
+    const validate = () => {
+        const newErrors: Record<string, string> = {}
+
+        if (!productData.name || productData.name.trim().length < 1) {
+            newErrors.name = "Name is required";
+        }
+
+        if (!productData.category) {
+            newErrors.category = "Category is required";
+        }
+
+        if (!productData.price) {
+            newErrors.price = "Price is required";
+        }
+
+        if (!productData.unit) {
+            newErrors.unit = "Unit is required";
+        }
+
+        setErrors(newErrors)
+
+        return Object.keys(newErrors).length === 0
+    }
 
     const createProductMutation = useMutation({
         // mutationFn: async (productData: any) => {
@@ -259,7 +294,6 @@ const Admin = () => {
         },
     });
 
-
     const deleteProductMutation = useMutation({
         mutationFn: async (id: number) => {
             return apiRequest("DELETE", `/products/${id}`);
@@ -287,12 +321,16 @@ const Admin = () => {
 
     const handleAddProduct = async (e: React.FormEvent) => {
         e.preventDefault();
+
+        if (!validate()) return;
+
         if (editingProduct) {
             // Edit product
             updateProductMutation.mutate({
                 id: editingProduct.id,
                 ...productData,
                 imageUrl: productData.imageUrl?.trim() || null,
+                description: productData.description?.trim() || null,
                 price: parseFloat(productData.price),
             });
         } else {
@@ -309,14 +347,36 @@ const Admin = () => {
         setIsDialogOpen(true);
     };
 
+    const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            const base64String = reader.result as string;
+            handleChange("imageUrl", base64String); // Store base64 string
+        };
+        reader.readAsDataURL(file);
+    };
+
+    const handleRemoveImage = () => {
+        handleChange("imageUrl", "");
+
+        // Reset file input
+        if (fileInputRef.current) {
+            fileInputRef.current.value = "";
+        }
+    };
+
     useEffect(() => {
         if (!isDialogOpen) {
             setProductData(initialProductData);
             setEditingProduct(null)
+            setErrors({})
         }
     }, [isDialogOpen]);
 
-    if (statsLoading || ordersLoading || productsLoading
+    if (statsLoading || ordersLoading || productsLoading || bagsLoading
         //|| messagesLoading
     ) {
         return (
@@ -369,11 +429,16 @@ const Admin = () => {
                                     </DialogDescription>
                                 </DialogHeader>
                                 <form onSubmit={handleAddProduct} className="space-y-4">
-                                    <Input
-                                        placeholder="Product Name"
-                                        value={productData.name}
-                                        onChange={(e) => handleChange("name", e.target.value)}
-                                    />
+                                    <div>
+                                        <Input
+                                            placeholder="Product Name"
+                                            value={productData.name}
+                                            onChange={(e) => handleChange("name", e.target.value)}
+                                        />
+                                        {errors.name && (
+                                            <p className="text-red-500 text-sm mt-1">{errors.name}</p>
+                                        )}
+                                    </div>
                                     <div className="flex items-center space-x-2">
                                         <Select
                                             value={productData.category}
@@ -390,27 +455,70 @@ const Admin = () => {
                                             </SelectContent>
                                         </Select>
                                     </div>
-                                    <Input
-                                        placeholder="Price"
-                                        type="number"
-                                        value={productData.price}
-                                        onChange={(e) => handleChange("price", e.target.value)}
-                                    />
-                                    <Input
-                                        placeholder="Unit (kg, dozen, bunch)"
-                                        value={productData.unit}
-                                        onChange={(e) => handleChange("unit", e.target.value)}
-                                    />
-                                    <Input
-                                        placeholder="Image URL"
-                                        value={productData.imageUrl ?? ""}
-                                        onChange={(e) => handleChange("imageUrl", e.target.value)}
-                                    />
-                                    <Textarea
-                                        placeholder="Description"
-                                        value={productData.description}
-                                        onChange={(e) => handleChange("description", e.target.value)}
-                                    />
+                                    <div>
+                                        <Input
+                                            placeholder="Price"
+                                            type="number"
+                                            value={productData.price}
+                                            onChange={(e) => handleChange("price", e.target.value)}
+                                        />
+                                        {errors.price && (
+                                            <p className="text-red-500 text-sm mt-1">{errors.price}</p>
+                                        )}
+                                    </div>
+                                    <div>
+                                        <Input
+                                            placeholder="Unit (kg, dozen, bunch)"
+                                            value={productData.unit}
+                                            onChange={(e) => handleChange("unit", e.target.value)}
+                                        />
+                                        {errors.unit && (
+                                            <p className="text-red-500 text-sm mt-1">{errors.unit}</p>
+                                        )}
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-sm font-medium text-gray-700">Product Image</label>
+
+                                        {productData.imageUrl && (
+                                            <div className="relative w-32 h-32">
+                                                <Image
+                                                    src={productData.imageUrl}
+                                                    alt="Product Preview"
+                                                    fill
+                                                    className="rounded border object-cover"
+                                                //className="w-full h-full object-cover rounded border"
+                                                />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleRemoveImage()}
+                                                    className="absolute top-[2px] right-[2px] bg-black bg-opacity-50 text-white rounded-full p-1 hover:bg-opacity-75"
+                                                    aria-label="Remove image"
+                                                >
+                                                    <X className='w-4 h-4' />
+                                                </button>
+                                            </div>
+                                        )}
+
+                                        <input
+                                            ref={fileInputRef}
+                                            type="file"
+                                            accept="image/*"
+                                            onChange={handleImageUpload}
+                                            className="block w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-white hover:file:bg-primary/90"
+                                        />
+                                        {/* <Input
+                                            placeholder="Image URL"
+                                            value={productData.imageUrl ?? ""}
+                                            onChange={(e) => handleChange("imageUrl", e.target.value)}
+                                        /> */}
+                                    </div>
+                                    <div>
+                                        <Textarea
+                                            placeholder="Description"
+                                            value={productData.description ?? ""}
+                                            onChange={(e) => handleChange("description", e.target.value)}
+                                        />
+                                    </div>
                                     {/* <div className="grid grid-cols-3 gap-2">
                                         <Input
                                             placeholder="Calories"
@@ -512,6 +620,7 @@ const Admin = () => {
                     <TabsList className="grid w-full grid-cols-5 mb-8">
                         <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
                         <TabsTrigger value="orders">Orders</TabsTrigger>
+                        <TabsTrigger value="bags">Bags</TabsTrigger>
                         <TabsTrigger value="products">Products</TabsTrigger>
                         <TabsTrigger value="billing">Billing</TabsTrigger>
                         {/* <TabsTrigger value="messages">Messages</TabsTrigger> */}
@@ -546,6 +655,13 @@ const Admin = () => {
                                 <OrdersTable orders={orders} />
                             </CardContent>
                         </Card>
+                    </TabsContent>
+
+                    <TabsContent value="bags">
+                        <BagsManagement
+                            bags={bags}
+                            products={products}
+                        />
                     </TabsContent>
 
                     <TabsContent value="products">

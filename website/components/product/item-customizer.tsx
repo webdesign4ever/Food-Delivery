@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Plus, Minus } from "lucide-react";
 import type { Product, CartItem } from "@/lib/types";
+import Image from "next/image";
 
 interface ItemCustomizerProps {
   products: Product[];
@@ -62,10 +63,19 @@ export default function ItemCustomizer({ products, onAddToCart, cartItems }: Ite
       <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-6">
         {products.map((product) => (
           <Card key={product.id} className="overflow-hidden hover:shadow-lg transition-shadow">
-            <div className="aspect-video bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
-              <div className="text-6xl">
-                {product.category === 'fruit' ? '🍎' : '🥬'}
-              </div>
+            <div className="aspect-video bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center relative">
+              {product.imageUrl ? (
+                <Image
+                  src={product.imageUrl}
+                  alt={product.name}
+                  fill
+                  className="rounded object-contain"
+                />
+              ) : (
+                <div className="text-6xl">
+                  {product.category === 'fruit' ? '🍎' : '🥬'}
+                </div>
+              )}
             </div>
 
             <CardContent className="p-6">

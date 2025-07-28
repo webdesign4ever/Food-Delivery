@@ -22,6 +22,41 @@
       "when": 1752764529298,
       "tag": "0002_blue_purifiers",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1753447818707,
+      "tag": "0003_purple_ghost_rider",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1753447928082,
+      "tag": "0004_sweet_cerebro",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1753448538295,
+      "tag": "0005_rich_iron_man",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1753448790593,
+      "tag": "0006_many_gorilla_man",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1753448866930,
+      "tag": "0007_last_patriot",
+      "breakpoints": true
     }
   ]
 }

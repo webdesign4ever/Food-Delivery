@@ -7,6 +7,18 @@ export interface BoxType {
   isActive: boolean;
 }
 
+export interface BagForm {
+  id?: number;
+  name: string;
+  category: "fruit" | "vegetable";
+  price: string;
+  fixedItems: string[],
+  customizableItems: string[],
+  itemsLimit: number;
+  description?: string | null;
+  isActive: boolean;
+}
+
 export interface Product {
   id: number;
   name: string;
@@ -26,7 +38,7 @@ export interface ProductForm {
   price: string;
   unit: string;
   imageUrl?: string | null;
-  description?: string;
+  description?: string | null;
   isAvailable: boolean;
   nutritionInfo?: any;
 }

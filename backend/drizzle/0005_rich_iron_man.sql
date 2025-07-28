@@ -1,0 +1,1 @@
+ALTER TABLE "bag_types" ALTER COLUMN "category" SET DEFAULT 'fruit';

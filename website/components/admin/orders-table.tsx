@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
@@ -213,13 +212,44 @@ export default function OrdersTable({ orders }: OrdersTableProps) {
                       <TableCell>{order.bagType.name}</TableCell>
                       <TableCell className="font-semibold">Rs. {order.totalAmount}</TableCell>
                       <TableCell>
-                        <div className="space-y-1">
+                        {/* <div className="space-y-1">
                           <Badge className={getPaymentStatusColor(order.paymentStatus)}>
                             {order.paymentStatus.charAt(0).toUpperCase() + order.paymentStatus.slice(1)}
                           </Badge>
                           <p className="text-xs text-gray-600 capitalize">
                             {order.paymentMethod}
                           </p>
+                        </div> */}
+                        <div className="space-y-1">
+                          <Select
+                            value={order.paymentStatus}
+                            onValueChange={(status) =>
+                              updatePaymentStatusMutation.mutate({ orderId: order.id, status })
+                            }
+                          >
+                            <SelectTrigger className={`w-44 ${getPaymentStatusColor(order.paymentStatus)}`}>
+                              <div className="flex items-end space-x-2">
+                                <p className="text-xs text-gray-600 capitalize">
+                                  {order.paymentMethod}
+                                </p>
+                                {/* <Badge className={`text-xs text-gray-600 capitalize ${getPaymentStatusColor(order.paymentStatus)}`}>
+                                  {order.paymentMethod}
+                                </Badge> */}
+                                <SelectValue />
+                              </div>
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="pending">Pending</SelectItem>
+                              <SelectItem value="completed">Completed</SelectItem>
+                              <SelectItem value="failed">Failed</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          {/* <Badge className={getPaymentStatusColor(order.paymentStatus)}>
+                            {order.paymentStatus.charAt(0).toUpperCase() + order.paymentStatus.slice(1)}
+                          </Badge>
+                          <p className="text-xs text-gray-600 capitalize">
+                            {order.paymentMethod}
+                          </p> */}
                         </div>
                       </TableCell>
                       <TableCell>
@@ -231,7 +261,7 @@ export default function OrdersTable({ orders }: OrdersTableProps) {
                             }
                           >
                             <SelectTrigger //className="w-32"
-                              className={`w-32 ${getOrderStatusColor(order.orderStatus)}`}
+                              className={`w-36 ${getOrderStatusColor(order.orderStatus)}`}
                             >
                               <div className="flex items-center space-x-2">
                                 {getOrderStatusIcon(order.orderStatus)}
@@ -290,11 +320,11 @@ export default function OrdersTable({ orders }: OrdersTableProps) {
               </TableBody>
             </Table>
           </div>
-        </CardContent>
-      </Card>
+        </CardContent >
+      </Card >
 
       {/* Dialog */}
-      <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
+      <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen} >
         <DialogContent className="max-h-[98vh] max-w-[60vw] overflow-y-auto" onOpenAutoFocus={(e) => e.preventDefault()}>
           <DialogHeader>
             <DialogTitle>Order Details</DialogTitle>
@@ -416,7 +446,7 @@ export default function OrdersTable({ orders }: OrdersTableProps) {
             <p>Loading...</p>
           )}
         </DialogContent>
-      </Dialog>
+      </Dialog >
 
       {/* Summary */}
       {

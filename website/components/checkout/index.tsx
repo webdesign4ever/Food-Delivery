@@ -329,7 +329,7 @@ const Checkout = () => {
             <tbody>
               ${receipt.items.map(item => `
                 <tr>
-                  <td>${item.sourceBoxType?.name || 'Mixed Selection'} - ${item.product.name}</td>
+                  <td>${item.sourceBoxType?.name} - ${item.product.name}</td>
                   <td>${item.quantity} ${item.product.unit}</td>
                   <td>Rs. ${item.product.price}</td>
                   <td>Rs. ${(parseFloat(item.product.price) * item.quantity).toFixed(2)}</td>
@@ -413,7 +413,7 @@ const Checkout = () => {
                                     {/* Group items by source box type */}
                                     {(() => {
                                         const itemsByBoxType = receipt.items.reduce((acc, item) => {
-                                            const boxName = item.sourceBoxType?.name || 'Mixed Selection';
+                                            const boxName = item.sourceBoxType!.name;
                                             if (!acc[boxName]) {
                                                 acc[boxName] = [];
                                             }
