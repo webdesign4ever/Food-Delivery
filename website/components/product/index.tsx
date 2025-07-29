@@ -1,26 +1,23 @@
 'use client';
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
-// import { useLocation } from "wouter";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import BoxSelector from "@/components/product/box-selector";
 import ItemCustomizer from "@/components/product/item-customizer";
-import type { BoxType, Product, CartItem } from "@/lib/types";
+import type { Product, CartItem, BagForm } from "@/lib/types";
 import { BASE_URL } from "@/lib/queryClient";
 import Link from "next/link";
+import { Badge } from "../ui/badge";
 
 export default function Products() {
-    const [selectedBox, setSelectedBox] = useState<BoxType | null>(null);
+    const [selectedBox, setSelectedBox] = useState<BagForm | null>(null);
     const [cartItems, setCartItems] = useState<CartItem[]>([]);
     const [autoSelected, setAutoSelected] = useState(false);
-    //const pathname = usePathname();
 
-    //const [location] = useLocation();
-    const { data: boxTypes = [] } = useQuery<BoxType[]>({
+    const { data: boxTypes = [] } = useQuery<BagForm[]>({
         queryKey: ["/bag-types"],
     });
 
-    const { data: products = [] } = useQuery<Product[]>({
+    const { data: products = [], isLoading: isProductsLoading } = useQuery<Product[]>({
         queryKey: ["/products"],
         queryFn: async () => {
             const res = await fetch(`${BASE_URL}/products?available=true`);
@@ -29,8 +26,8 @@ export default function Products() {
         },
     });
 
-    const fruits = products.filter(p => p.category === "fruit");
-    const vegetables = products.filter(p => p.category === "vegetable");
+    // const fruits = products.filter(p => p.category === "fruit");
+    // const vegetables = products.filter(p => p.category === "vegetable");
 
     // Auto-select box if boxId is provided in URL
     useEffect(() => {
@@ -47,42 +44,253 @@ export default function Products() {
         }
     }, [boxTypes, autoSelected]);
 
-    //     if (boxId && boxTypes.length > 0 && !selectedBox) {
-    //         const box = boxTypes.find(b => b.id === parseInt(boxId));
-    //         if (box) {
-    //             setSelectedBox(box);
-    //         }
-    //     }
-    // }, [boxTypes, selectedBox]);
+    // Initialize cart with both fixed and customizable items
+    useEffect(() => {
+        if (!selectedBox || !products.length) return;
 
-    const calculateTotal = () => {
-        // Only calculate the cost of added items, no box price
-        return cartItems.reduce((sum, item) => {
-            return sum + (parseFloat(item.product.price) * item.quantity);
-        }, 0).toFixed(2);
-    };
+        // Get fixed products
+        const fixedProducts = products.filter(p =>
+            selectedBox.fixedItems.includes(p.id))
+            .map(product => ({
+                product,
+                quantity: 1,
+                sourceBoxType: selectedBox,
+                isFixed: true
+            }));
 
-    const addToCart = (product: Product, quantity: number) => {
+        // Get customizable products (initialize with first item if needed)
+        const customizableProducts = products.filter(p =>
+            selectedBox.customizableItems.includes(p.id))
+            .map(product => ({
+                product,
+                quantity: 1,
+                sourceBoxType: selectedBox,
+                isFixed: false
+            }));
+
+        setCartItems([...fixedProducts, ...customizableProducts]);
+    }, [selectedBox, products,]);
+
+    // const replaceCustomizableItem = useCallback((oldProductId: number, newProduct: Product, quantity: number) => {
+    //     setCartItems(prev => {
+    //         // Remove the old customizable item
+    //         const filtered = prev.filter(item => item.product.id !== oldProductId);
+    //         // Add the new item
+    //         return [...filtered, {
+    //             product: newProduct,
+    //             quantity,
+    //             sourceBoxType: selectedBox,
+    //             isFixed: false
+    //         }];
+    //     });
+    // }, [selectedBox]);
+    // const getCustomizableItems = () => {
+    //     if (!selectedBox) return [];
+    //     return cartItems.filter(item =>
+    //         !item.isFixed &&
+    //         selectedBox.customizableItems.includes(item.product.id)
+    //     );
+    // };
+
+    // Calculate total items count (including fixed items)
+    const calculateTotalItems = useMemo(() =>
+        cartItems.reduce((sum, item) => sum + item.quantity, 0),
+        [cartItems]
+    );
+    // const calculateTotalItems = () => {
+    //     return cartItems.reduce((sum, item) => sum + item.quantity, 0);
+    // };
+
+    // Calculate total price (using box price instead of item prices)
+    const calculateTotal = useMemo(() =>
+        selectedBox ? selectedBox.price : "0.00",
+        [selectedBox]
+    );
+    // const calculateTotal = () => {
+    //     if (!selectedBox) return "0.00";
+    //     return selectedBox.price;
+    // };
+
+    // const calculateTotal = () => {
+    //     // Only calculate the cost of added items, no box price
+    //     return cartItems.reduce((sum, item) => {
+    //         return sum + (parseFloat(item.product.price) * item.quantity);
+    //     }, 0).toFixed(2);
+    // };
+
+    // Check if cart meets the items limit requirement
+    const isCartValid = useMemo(() =>
+        selectedBox ? calculateTotalItems === selectedBox.itemsLimit : false,
+        [selectedBox, calculateTotalItems]
+    );
+    // const isCartValid = () => {
+    //     if (!selectedBox) return false;
+    //     return calculateTotalItems() == selectedBox.itemsLimit;
+    // };
+
+    const addToCart = useCallback((product: Product, quantity: number) => {
         if (!selectedBox) return;
 
+        // Check if product is fixed (shouldn't be added manually)
+        if (selectedBox.fixedItems.includes(product.id)) return;
+
         setCartItems(prev => {
-            const existing = prev.find(item => item.product.id === product.id);
+            const existing = prev.find(item =>
+                item.product.id === product.id && !item.isFixed
+            );
+
             if (existing) {
                 return prev.map(item =>
-                    item.product.id === product.id
+                    item.product.id === product.id && !item.isFixed
                         ? { ...item, quantity: item.quantity + quantity }
                         : item
                 );
             }
-            return [...prev, { product, quantity, sourceBoxType: selectedBox }];
+            return [...prev, {
+                product,
+                quantity,
+                sourceBoxType: selectedBox,
+                isFixed: false
+            }];
         });
-    };
+    }, [selectedBox]);
+    // const addToCart = useCallback((product: Product, quantity: number) => {
+    //     if (!selectedBox) return;
+    //     if (selectedBox.fixedItems.includes(product.id)) return;
 
-    const removeFromCart = (productId: number) => {
-        setCartItems(prev => prev.filter(item => item.product.id !== productId));
-    };
+    //     setCartItems(prev => {
+    //         // Check if product is already in cart (not as customizable item)
+    //         const existingNonCustomizable = prev.find(item =>
+    //             item.product.id === product.id &&
+    //             !selectedBox.customizableItems.includes(item.product.id)
+    //         );
 
-    const updateQuantity = (productId: number, quantity: number) => {
+    //         if (existingNonCustomizable) {
+    //             // Increase quantity of existing non-customizable item
+    //             return prev.map(item =>
+    //                 item.product.id === product.id &&
+    //                     !selectedBox.customizableItems.includes(item.product.id)
+    //                     ? { ...item, quantity: item.quantity + quantity }
+    //                     : item
+    //             );
+    //         }
+
+    //         // Check if we have empty customizable slots
+    //         const customizableInCart = prev.filter(item =>
+    //             selectedBox.customizableItems.includes(item.product.id)
+    //         ).length;
+
+    //         const totalCustomizableSlots = selectedBox.customizableItems.length;
+    //         const hasEmptyCustomizableSlot = customizableInCart < totalCustomizableSlots;
+
+    //         if (hasEmptyCustomizableSlot && selectedBox.customizableItems.includes(product.id)) {
+    //             // Add as new customizable item
+    //             return [...prev, {
+    //                 product,
+    //                 quantity,
+    //                 sourceBoxType: selectedBox,
+    //                 isFixed: false
+    //             }];
+    //         }
+
+    //         // Otherwise add as regular item
+    //         return [...prev, {
+    //             product,
+    //             quantity,
+    //             sourceBoxType: selectedBox,
+    //             isFixed: false
+    //         }];
+    //     });
+    // }, [selectedBox]);
+    // const addToCart = (product: Product, quantity: number) => {
+    //     if (!selectedBox) return;
+
+    //     // Check if product is fixed (shouldn't be added manually)
+    //     if (selectedBox.fixedItems.includes(product.id)) return;
+
+    //     setCartItems(prev => {
+    //         const existing = prev.find(item =>
+    //             item.product.id === product.id && !item.isFixed
+    //         );
+
+    //         if (existing) {
+    //             return prev.map(item =>
+    //                 item.product.id === product.id && !item.isFixed
+    //                     ? { ...item, quantity: item.quantity + quantity }
+    //                     : item
+    //             );
+    //         }
+    //         return [...prev, {
+    //             product,
+    //             quantity,
+    //             sourceBoxType: selectedBox,
+    //             isFixed: false
+    //         }];
+    //     });
+    // };
+
+    // const addToCart = (product: Product, quantity: number) => {
+    //     if (!selectedBox) return;
+
+    //     setCartItems(prev => {
+    //         const existing = prev.find(item => item.product.id === product.id);
+    //         if (existing) {
+    //             return prev.map(item =>
+    //                 item.product.id === product.id
+    //                     ? { ...item, quantity: item.quantity + quantity }
+    //                     : item
+    //             );
+    //         }
+    //         return [...prev, { product, quantity, sourceBoxType: selectedBox }];
+    //     });
+    // };
+
+    // const removeFromCart = (productId: number) => {
+    //     setCartItems(prev =>
+    //         prev.filter(item =>
+    //             item.product.id !== productId || item.isFixed
+    //         )
+    //     );
+    // };
+    const removeFromCart = useCallback((productId: number) => {
+        setCartItems(prev =>
+            prev.filter(item =>
+                item.product.id !== productId || item.isFixed
+            )
+        );
+    }, []);
+
+    // const removeFromCart = (productId: number) => {
+    //     setCartItems(prev => prev.filter(item => item.product.id !== productId));
+    // };
+
+    // const updateQuantity = (productId: number, quantity: number) => {
+    //     // Prevent modifying fixed items
+    //     const isFixed = cartItems.some(item =>
+    //         item.product.id === productId && item.isFixed
+    //     );
+    //     if (isFixed) return;
+
+    //     if (quantity <= 0) {
+    //         removeFromCart(productId);
+    //         return;
+    //     }
+
+    //     setCartItems(prev =>
+    //         prev.map(item =>
+    //             item.product.id === productId && !item.isFixed
+    //                 ? { ...item, quantity }
+    //                 : item
+    //         )
+    //     );
+    // };
+    const updateQuantity = useCallback((productId: number, quantity: number) => {
+        // Prevent modifying fixed items
+        const isFixed = cartItems.some(item =>
+            item.product.id === productId && item.isFixed
+        );
+        if (isFixed) return;
+
         if (quantity <= 0) {
             removeFromCart(productId);
             return;
@@ -90,12 +298,45 @@ export default function Products() {
 
         setCartItems(prev =>
             prev.map(item =>
-                item.product.id === productId
+                item.product.id === productId && !item.isFixed
                     ? { ...item, quantity }
                     : item
             )
         );
-    };
+    }, [cartItems, removeFromCart]);
+
+    // const updateQuantity = (productId: number, quantity: number) => {
+    //     if (quantity <= 0) {
+    //         removeFromCart(productId);
+    //         return;
+    //     }
+
+    //     setCartItems(prev =>
+    //         prev.map(item =>
+    //             item.product.id === productId
+    //                 ? { ...item, quantity }
+    //                 : item
+    //         )
+    //     );
+    // };
+
+    // Modify the handleSelectBox function
+    // const handleSelectBox = useCallback((box: BagForm) => {
+    //     setSelectedBox(box);
+    //     setCartItems([]);
+    // }, []);
+
+    // Add loading state to your UI
+    if (isProductsLoading) {
+        return (
+            <div className="min-h-screen bg-light-green-tint py-8 flex items-center justify-center">
+                <div className="text-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-fresh-green mx-auto"></div>
+                    <p className="mt-4 text-dark-text">Loading your box...</p>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="min-h-screen bg-light-green-tint py-8">
@@ -126,6 +367,7 @@ export default function Products() {
                                         <button
                                             onClick={() => {
                                                 setSelectedBox(null)
+                                                setCartItems([]);
                                             }}
                                             className="text-fresh-green hover:opacity-80 font-medium"
                                         >
@@ -134,7 +376,20 @@ export default function Products() {
                                     </div>
                                 </div>
 
-                                <Tabs defaultValue="all" className="w-full">
+                                <ItemCustomizer
+                                    products={
+                                        selectedBox.category === 'mixed'
+                                            ? products // show all for 'mixed'
+                                            : products.filter((p) => p.category === selectedBox.category)
+                                    }
+                                    onAddToCart={addToCart}
+                                    selectedBox={selectedBox}
+                                    cartItems={cartItems}
+                                //onReplaceCustomizable={replaceCustomizableItem}
+                                //cartItems={getCustomizableItems()}
+                                />
+
+                                {/* <Tabs defaultValue="all" className="w-full">
                                     <TabsList className="grid w-full grid-cols-3">
                                         <TabsTrigger value="all">All Products</TabsTrigger>
                                         <TabsTrigger value="fruits">Fruits</TabsTrigger>
@@ -164,7 +419,7 @@ export default function Products() {
                                             cartItems={cartItems}
                                         />
                                     </TabsContent>
-                                </Tabs>
+                                </Tabs> */}
                             </div>
                         )}
                     </div>
@@ -183,35 +438,58 @@ export default function Products() {
 
                                     <div className="flex justify-between items-center">
                                         <span className="font-medium">Total Items:</span>
-                                        <span>{cartItems.reduce((sum, item) => sum + item.quantity, 0)}</span>
+                                        <span>
+                                            {calculateTotalItems}/{selectedBox.itemsLimit}
+                                        </span>
+                                        {/* <span>{cartItems.reduce((sum, item) => sum + item.quantity, 0)}</span> */}
                                     </div>
 
-                                    {cartItems.length > 0 && (
+                                    {!isCartValid && (
+                                        <div className="text-sm text-red-600 bg-red-50 p-2 rounded">
+                                            Please select at least {selectedBox.itemsLimit} items to proceed
+                                        </div>
+                                    )}
+                                    {/* {cartItems.length > 0 && (
                                         <div className="text-sm text-gray-600 bg-yellow-50 p-2 rounded">
                                             <strong>Note:</strong> Items from all box types will be combined in your order
                                         </div>
-                                    )}
+                                    )} */}
                                 </div>
 
                                 {cartItems.length > 0 && (
                                     <div className="space-y-3 mb-6 max-h-64 overflow-y-auto">
                                         {cartItems.map((item) => (
                                             <div key={item.product.id} className="flex justify-between items-center text-sm">
-                                                <span className="flex-1">{item.product.name}</span>
+                                                <span className="flex-1">
+                                                    {item.product.name}
+                                                    {item.isFixed && (
+                                                        <Badge variant="outline" className="text-xs bg-gray-100 text-gray-700 ml-1">
+                                                            fixed
+                                                        </Badge>
+                                                        // <span className="text-xs text-gray-500 ml-1">(fixed)</span>
+                                                    )}
+                                                </span>
                                                 <div className="flex items-center space-x-2">
-                                                    <button
-                                                        onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
-                                                        className="w-6 h-6 flex items-center justify-center bg-gray-100 rounded text-gray-600 hover:bg-gray-200"
-                                                    >
-                                                        -
-                                                    </button>
-                                                    <span className="w-8 text-center">{item.quantity}</span>
-                                                    <button
-                                                        onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
-                                                        className="w-6 h-6 flex items-center justify-center bg-gray-100 rounded text-gray-600 hover:bg-gray-200"
-                                                    >
-                                                        +
-                                                    </button>
+                                                    {!item.isFixed && (
+                                                        <>
+                                                            <button
+                                                                onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
+                                                                className="w-6 h-6 flex items-center justify-center bg-gray-100 rounded text-gray-600 hover:bg-gray-200"
+                                                            >
+                                                                -
+                                                            </button>
+                                                            <span className="w-8 text-center">{item.quantity}</span>
+                                                            <button
+                                                                onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
+                                                                className="w-6 h-6 flex items-center justify-center bg-gray-100 rounded text-gray-600 hover:bg-gray-200"
+                                                            >
+                                                                +
+                                                            </button>
+                                                        </>
+                                                    )}
+                                                    {item.isFixed && (
+                                                        <span className="w-8 text-center">{item.quantity}</span>
+                                                    )}
                                                 </div>
                                             </div>
                                         ))}
@@ -221,8 +499,29 @@ export default function Products() {
                                 <div className="border-t pt-4">
                                     <div className="flex justify-between items-center text-lg font-bold mb-4">
                                         <span>Total:</span>
-                                        <span className="text-fresh-green">Rs. {calculateTotal()}</span>
+                                        <span className="text-fresh-green">Rs. {calculateTotal}</span>
                                     </div>
+
+                                    <Link href={isCartValid ? `/checkout?boxId=${selectedBox.id}` : "#"}
+                                        //href={`/checkout?boxId=${selectedBox.id}`}
+                                        onClick={(e) => {
+                                            if (!isCartValid) {
+                                                e.preventDefault(); // Prevent navigation when cart is invalid
+                                                return;
+                                            }
+                                            // if (cartItems.length > 0) {
+                                            if (typeof window !== "undefined") {
+                                                localStorage.setItem('cartItems', JSON.stringify(cartItems));
+                                                localStorage.setItem('selectedBox', JSON.stringify(selectedBox));
+                                            }
+                                        }}
+                                        aria-disabled={!isCartValid}
+                                        tabIndex={!isCartValid ? -1 : undefined}
+                                        className={`w-full bg-fresh-green text-white py-3 rounded-xl font-semibold hover:opacity-90 block text-center  transition-colors 
+                                            ${!isCartValid ? "bg-gray-300 cursor-not-allowed" : ""}`}
+                                    >
+                                        Proceed to Checkout
+                                    </Link>
 
                                     {/* <Link href={`/checkout?boxId=${boxTypes.length > 0 ? boxTypes[0].id : 1}`}>
                                         <button
@@ -243,18 +542,6 @@ export default function Products() {
                                             Proceed to Checkout
                                         </button>
                                     </Link> */}
-                                    <Link href={`/checkout?boxId=${selectedBox ? selectedBox.id : 1}`}
-                                        onClick={() => {
-                                            if (cartItems.length > 0) {
-                                                if (typeof window !== "undefined") {
-                                                    localStorage.setItem('cartItems', JSON.stringify(cartItems));
-                                                }
-                                            }
-                                        }}
-                                        className={`w-full bg-fresh-green text-white py-3 rounded-xl font-semibold hover:opacity-90 block text-center  transition-colors ${cartItems.length === 0 ? "bg-gray-300 cursor-not-allowed" : ""}`}
-                                    >
-                                        Proceed to Checkout
-                                    </Link>
                                 </div>
                             </div>
                         </div>

@@ -42,6 +42,7 @@ export class BagTypesService {
 
     async findAll(): Promise<BagType[]> {
         const bagList = await db.select().from(bagTypes).where(eq(bagTypes.isActive, true)).orderBy(bagTypes.price);
+        //const bagList = await db.select().from(bagTypes).where(eq(bagTypes.isActive, true));
 
         const enrichedBagList = await Promise.all(
             bagList.map(async (bag) => {

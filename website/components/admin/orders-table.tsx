@@ -325,7 +325,7 @@ export default function OrdersTable({ orders }: OrdersTableProps) {
 
       {/* Dialog */}
       <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen} >
-        <DialogContent className="max-h-[98vh] max-w-[60vw] overflow-y-auto" onOpenAutoFocus={(e) => e.preventDefault()}>
+        <DialogContent className="max-h-[98vh] md:max-w-[60vw] overflow-y-auto" onOpenAutoFocus={(e) => e.preventDefault()}>
           <DialogHeader>
             <DialogTitle>Order Details</DialogTitle>
             <DialogDescription>

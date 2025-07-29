@@ -684,6 +684,7 @@ const Admin = () => {
                                                     </Badge>
                                                 </div>
                                                 <div className="space-y-2">
+                                                    {product.description && <p className="text-sm text-gray-600">Description: {product.description}</p>}
                                                     <p className="text-sm text-gray-600">Category: {product.category}</p>
                                                     <p className="text-sm text-gray-600">Unit: {product.unit}</p>
                                                     <p className="text-lg font-bold text-fresh-green">Rs. {product.price}</p>

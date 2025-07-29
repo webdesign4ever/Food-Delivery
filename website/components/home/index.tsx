@@ -3,13 +3,14 @@ import React from 'react'
 import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Truck, Award, Users, Package, Leaf, Apple, ShoppingCart, Play } from "lucide-react";
-import type { BoxType, OrderStats } from "@/lib/types";
+import type { BagForm, OrderStats } from "@/lib/types";
 import { useQuery } from '@tanstack/react-query';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
+import { BoxCard } from './box-card';
 
 const Home = () => {
-    const { data: boxTypes = [] } = useQuery<BoxType[]>({
+    const { data: boxTypes = [] } = useQuery<BagForm[]>({
         queryKey: ["/bag-types"],
     });
 
@@ -130,7 +131,26 @@ const Home = () => {
                         </p>
                     </div>
 
-                    <div className="grid lg:grid-cols-3 gap-8 mb-12">
+                    <Tabs defaultValue="fruit" className="w-full">
+                        <TabsList className="grid w-full grid-cols-3">
+                            <TabsTrigger value="fruit">Fruits</TabsTrigger>
+                            <TabsTrigger value="vegetable">Vegetables</TabsTrigger>
+                            <TabsTrigger value="mixed">Mixed</TabsTrigger>
+                        </TabsList>
+                        {['fruit', 'vegetable', 'mixed'].map((category) => (
+                            <TabsContent key={category} value={category} className="mt-6">
+                                <div className="grid lg:grid-cols-3 gap-8 mb-12">
+                                    {boxTypes
+                                        .filter((box) => box.category === category)
+                                        .map((box, index) => (
+                                            <BoxCard key={box.id} box={box} index={index} />
+                                        ))}
+                                </div>
+                            </TabsContent>
+                        ))}
+                    </Tabs>
+
+                    {/* <div className="grid lg:grid-cols-3 gap-8 mb-12">
                         {boxTypes.map((box, index) => (
                             <Card key={box.id} className={`relative overflow-hidden hover:shadow-xl transition-all group ${index === 1 ? 'border-2 border-sunny-yellow bg-light-yellow-tint' : 'bg-light-green-tint'
                                 }`}>
@@ -183,7 +203,7 @@ const Home = () => {
                                 </CardContent>
                             </Card>
                         ))}
-                    </div>
+                    </div> */}
 
                     <div className="text-center">
                         <Link href="/products">

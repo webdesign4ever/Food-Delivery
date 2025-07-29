@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog';
-import { BagForm, BoxType, Product } from '@/lib/types';
+import { BagForm, Product } from '@/lib/types';
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '../ui/dialog';
 import { Input } from '../ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
@@ -41,9 +41,8 @@ const BagsManagement = ({ bags, products }: BagsManagementProps) => {
     const [editingBag, setEditingBag] = useState<null | BagForm>(null);
     const [errors, setErrors] = useState<Record<string, string>>({})
 
-    const filteredProducts = products.filter(
-        (product) => product.category === bagData.category
-    );
+    const filteredProducts = bagData.category === "mixed" ? products
+        : products.filter((product) => product.category === bagData.category);
 
     const handleChange = (key: keyof BagForm, value: any) => {
         setBagData(prev => ({ ...prev, [key]: value }));
@@ -139,6 +138,28 @@ const BagsManagement = ({ bags, products }: BagsManagementProps) => {
         },
     });
 
+    const deleteBagMutation = useMutation({
+        mutationFn: async (id: number) => {
+            return apiRequest("DELETE", `/bag-types/${id}`);
+        },
+        onSuccess: () => {
+            // Invalidate stats cache to update counters on home page
+            queryClient.invalidateQueries({ queryKey: ["/bag-types"] });
+
+            toast({
+                title: "Bag Deleted!",
+                description: "The selected bag has been permanently removed from your store.",
+            });
+        },
+        onError: () => {
+            toast({
+                title: "Failed to Delete Bag",
+                description: "Something went wrong while deleting the bag. Please try again or contact support.",
+                variant: "destructive",
+            });
+        },
+    });
+
     const handleAddBag = async (e: React.FormEvent) => {
         e.preventDefault();
 
@@ -190,6 +211,7 @@ const BagsManagement = ({ bags, products }: BagsManagementProps) => {
     };
 
     useEffect(() => {
+        if (bagData.category === "mixed") return;
         const categoryProducts = products.filter(p => p.category === bagData.category);
 
         // Optional: remove any selected items not in new category
@@ -233,7 +255,7 @@ const BagsManagement = ({ bags, products }: BagsManagementProps) => {
                                 Add Bag
                             </Button>
                         </DialogTrigger>
-                        <DialogContent className="max-h-[98vh] overflow-y-auto" onCloseAutoFocus={(e) => e.preventDefault()}>
+                        <DialogContent className="max-h-[98vh] md:max-w-[60vw] overflow-y-auto" onCloseAutoFocus={(e) => e.preventDefault()}>
                             <DialogHeader>
                                 <DialogTitle>
                                     {editingBag ? "Edit Bag" : "Add New Bag"}
@@ -266,25 +288,30 @@ const BagsManagement = ({ bags, products }: BagsManagementProps) => {
                                         <SelectContent>
                                             <SelectItem value="fruit">Fruit</SelectItem>
                                             <SelectItem value="vegetable">Vegetable</SelectItem>
+                                            <SelectItem value="mixed">Mixed</SelectItem>
                                         </SelectContent>
                                     </Select>
                                 </div>
-                                <div className="flex items-center space-x-2">
+                                <div className="flex items-center space-x-2"
+                                >
                                     <MultiSelect
                                         options={filteredProducts.map(p => ({ value: p.id.toString(), label: p.name }))}
                                         selected={bagData.fixedItems}
                                         onChange={(val) => handleChange("fixedItems", val)}
                                         placeholder="Fixed items"
                                         disabledOptions={bagData.customizableItems} // ✅ disable those already in customizable
+                                    // className="w-full"
                                     />
                                 </div>
-                                <div className="flex items-center space-x-2">
+                                <div className="flex items-center space-x-2"
+                                >
                                     <MultiSelect
                                         options={filteredProducts.map(p => ({ value: p.id.toString(), label: p.name }))}
                                         selected={bagData.customizableItems}
                                         onChange={(val) => handleChange("customizableItems", val)}
                                         placeholder="Customizable items"
                                         disabledOptions={bagData.fixedItems} // ✅ disable those already in fixed
+                                    // className="w-full"
                                     />
                                 </div>
                                 <div>
@@ -329,7 +356,38 @@ const BagsManagement = ({ bags, products }: BagsManagementProps) => {
                                     <h4 className="font-semibold text-dark-text">{bag.name}</h4>
                                 </div>
                                 <div className="space-y-2">
-                                    <p className="text-sm text-gray-600">Description: {bag.description}</p>
+                                    {bag.description && <p className="text-sm text-gray-600">Description: {bag.description}</p>}
+                                    <p className="text-sm text-gray-600">Category: {bag.category}</p>
+                                    {bag.fixedItems.length > 0 &&
+                                        <div>
+                                            <p className="text-sm font-medium text-gray-700">Fixed Items:</p>
+                                            <ul className="list-disc list-inside text-sm text-gray-600">
+                                                {bag.fixedItems.map((id) => {
+                                                    const product = products.find((p) => p.id === parseInt(id));
+                                                    return (
+                                                        <li key={id}>
+                                                            {product ? product.name : `Unknown Product (ID: ${id})`}
+                                                        </li>
+                                                    );
+                                                })}
+                                            </ul>
+                                        </div>
+                                    }
+                                    {bag.customizableItems.length > 0 &&
+                                        <div>
+                                            <p className="text-sm font-medium text-gray-700">Customizable Items:</p>
+                                            <ul className="list-disc list-inside text-sm text-gray-600">
+                                                {bag.customizableItems.map((id) => {
+                                                    const product = products.find((p) => p.id === parseInt(id));
+                                                    return (
+                                                        <li key={id}>
+                                                            {product ? product.name : `Unknown Product (ID: ${id})`}
+                                                        </li>
+                                                    );
+                                                })}
+                                            </ul>
+                                        </div>
+                                    }
                                     <p className="text-sm text-gray-600">Items Limit: {bag.itemsLimit}</p>
                                     <p className="text-lg font-bold text-fresh-green">Rs. {bag.price}</p>
                                 </div>
@@ -356,7 +414,7 @@ const BagsManagement = ({ bags, products }: BagsManagementProps) => {
                                             <AlertDialogFooter>
                                                 <AlertDialogCancel>Cancel</AlertDialogCancel>
                                                 <AlertDialogAction
-                                                // onClick={() => deleteProductMutation.mutate(product.id!)}
+                                                    onClick={() => deleteBagMutation.mutate(bag.id!)}
                                                 >
                                                     Yes, Delete
                                                 </AlertDialogAction>

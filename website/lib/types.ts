@@ -10,7 +10,7 @@ export interface BoxType {
 export interface BagForm {
   id?: number;
   name: string;
-  category: "fruit" | "vegetable";
+  category: "fruit" | "vegetable" | "mixed";
   price: string;
   fixedItems: string[],
   customizableItems: string[],
@@ -46,7 +46,9 @@ export interface ProductForm {
 export interface CartItem {
   product: Product;
   quantity: number;
-  sourceBoxType?: BoxType; // Track which box type this item was added from
+  sourceBoxType?: BagForm; // Track which bag type this item was added from
+  isFixed?: boolean;
+  //sourceBoxType?: BoxType; // Track which box type this item was added from
 }
 
 export interface Customer {
