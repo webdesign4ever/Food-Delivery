@@ -71,27 +71,6 @@ export default function Products() {
         setCartItems([...fixedProducts, ...customizableProducts]);
     }, [selectedBox, products,]);
 
-    // const replaceCustomizableItem = useCallback((oldProductId: number, newProduct: Product, quantity: number) => {
-    //     setCartItems(prev => {
-    //         // Remove the old customizable item
-    //         const filtered = prev.filter(item => item.product.id !== oldProductId);
-    //         // Add the new item
-    //         return [...filtered, {
-    //             product: newProduct,
-    //             quantity,
-    //             sourceBoxType: selectedBox,
-    //             isFixed: false
-    //         }];
-    //     });
-    // }, [selectedBox]);
-    // const getCustomizableItems = () => {
-    //     if (!selectedBox) return [];
-    //     return cartItems.filter(item =>
-    //         !item.isFixed &&
-    //         selectedBox.customizableItems.includes(item.product.id)
-    //     );
-    // };
-
     // Calculate total items count (including fixed items)
     const calculateTotalItems = useMemo(() =>
         cartItems.reduce((sum, item) => sum + item.quantity, 0),
@@ -154,54 +133,6 @@ export default function Products() {
             }];
         });
     }, [selectedBox]);
-    // const addToCart = useCallback((product: Product, quantity: number) => {
-    //     if (!selectedBox) return;
-    //     if (selectedBox.fixedItems.includes(product.id)) return;
-
-    //     setCartItems(prev => {
-    //         // Check if product is already in cart (not as customizable item)
-    //         const existingNonCustomizable = prev.find(item =>
-    //             item.product.id === product.id &&
-    //             !selectedBox.customizableItems.includes(item.product.id)
-    //         );
-
-    //         if (existingNonCustomizable) {
-    //             // Increase quantity of existing non-customizable item
-    //             return prev.map(item =>
-    //                 item.product.id === product.id &&
-    //                     !selectedBox.customizableItems.includes(item.product.id)
-    //                     ? { ...item, quantity: item.quantity + quantity }
-    //                     : item
-    //             );
-    //         }
-
-    //         // Check if we have empty customizable slots
-    //         const customizableInCart = prev.filter(item =>
-    //             selectedBox.customizableItems.includes(item.product.id)
-    //         ).length;
-
-    //         const totalCustomizableSlots = selectedBox.customizableItems.length;
-    //         const hasEmptyCustomizableSlot = customizableInCart < totalCustomizableSlots;
-
-    //         if (hasEmptyCustomizableSlot && selectedBox.customizableItems.includes(product.id)) {
-    //             // Add as new customizable item
-    //             return [...prev, {
-    //                 product,
-    //                 quantity,
-    //                 sourceBoxType: selectedBox,
-    //                 isFixed: false
-    //             }];
-    //         }
-
-    //         // Otherwise add as regular item
-    //         return [...prev, {
-    //             product,
-    //             quantity,
-    //             sourceBoxType: selectedBox,
-    //             isFixed: false
-    //         }];
-    //     });
-    // }, [selectedBox]);
     // const addToCart = (product: Product, quantity: number) => {
     //     if (!selectedBox) return;
 
@@ -245,13 +176,6 @@ export default function Products() {
     //     });
     // };
 
-    // const removeFromCart = (productId: number) => {
-    //     setCartItems(prev =>
-    //         prev.filter(item =>
-    //             item.product.id !== productId || item.isFixed
-    //         )
-    //     );
-    // };
     const removeFromCart = useCallback((productId: number) => {
         setCartItems(prev =>
             prev.filter(item =>
@@ -259,31 +183,18 @@ export default function Products() {
             )
         );
     }, []);
+    // const removeFromCart = (productId: number) => {
+    //     setCartItems(prev =>
+    //         prev.filter(item =>
+    //             item.product.id !== productId || item.isFixed
+    //         )
+    //     );
+    // };
 
     // const removeFromCart = (productId: number) => {
     //     setCartItems(prev => prev.filter(item => item.product.id !== productId));
     // };
 
-    // const updateQuantity = (productId: number, quantity: number) => {
-    //     // Prevent modifying fixed items
-    //     const isFixed = cartItems.some(item =>
-    //         item.product.id === productId && item.isFixed
-    //     );
-    //     if (isFixed) return;
-
-    //     if (quantity <= 0) {
-    //         removeFromCart(productId);
-    //         return;
-    //     }
-
-    //     setCartItems(prev =>
-    //         prev.map(item =>
-    //             item.product.id === productId && !item.isFixed
-    //                 ? { ...item, quantity }
-    //                 : item
-    //         )
-    //     );
-    // };
     const updateQuantity = useCallback((productId: number, quantity: number) => {
         // Prevent modifying fixed items
         const isFixed = cartItems.some(item =>
@@ -304,6 +215,27 @@ export default function Products() {
             )
         );
     }, [cartItems, removeFromCart]);
+    // const updateQuantity = (productId: number, quantity: number) => {
+    //     // Prevent modifying fixed items
+    //     const isFixed = cartItems.some(item =>
+    //         item.product.id === productId && item.isFixed
+    //     );
+    //     if (isFixed) return;
+
+    //     if (quantity <= 0) {
+    //         removeFromCart(productId);
+    //         return;
+    //     }
+
+    //     setCartItems(prev =>
+    //         prev.map(item =>
+    //             item.product.id === productId && !item.isFixed
+    //                 ? { ...item, quantity }
+    //                 : item
+    //         )
+    //     );
+    // };
+
 
     // const updateQuantity = (productId: number, quantity: number) => {
     //     if (quantity <= 0) {
@@ -320,11 +252,6 @@ export default function Products() {
     //     );
     // };
 
-    // Modify the handleSelectBox function
-    // const handleSelectBox = useCallback((box: BagForm) => {
-    //     setSelectedBox(box);
-    //     setCartItems([]);
-    // }, []);
 
     // Add loading state to your UI
     if (isProductsLoading) {
@@ -364,7 +291,7 @@ export default function Products() {
                                             <h3 className="text-2xl font-bold text-dark-text">{selectedBox.name}</h3>
                                             <p className="text-gray-600">{selectedBox.description}</p>
                                         </div>
-                                        <button
+                                        <Link href={'/products'}
                                             onClick={() => {
                                                 setSelectedBox(null)
                                                 setCartItems([]);
@@ -372,7 +299,17 @@ export default function Products() {
                                             className="text-fresh-green hover:opacity-80 font-medium"
                                         >
                                             Change Box
-                                        </button>
+
+                                        </Link>
+                                        {/* <button
+                                            onClick={() => {
+                                                setSelectedBox(null)
+                                                setCartItems([]);
+                                            }}
+                                            className="text-fresh-green hover:opacity-80 font-medium"
+                                        >
+                                            Change Box
+                                        </button> */}
                                     </div>
                                 </div>
 
@@ -385,8 +322,6 @@ export default function Products() {
                                     onAddToCart={addToCart}
                                     selectedBox={selectedBox}
                                     cartItems={cartItems}
-                                //onReplaceCustomizable={replaceCustomizableItem}
-                                //cartItems={getCustomizableItems()}
                                 />
 
                                 {/* <Tabs defaultValue="all" className="w-full">
@@ -478,17 +413,18 @@ export default function Products() {
                                                             >
                                                                 -
                                                             </button>
-                                                            <span className="w-8 text-center">{item.quantity}</span>
-                                                            <button
+                                                            {/* <span className="w-8 text-center">{item.quantity}</span> */}
+                                                            <span className="w-full text-center">{item.quantity} {item.product.unit}</span>
+                                                            {/* <button
                                                                 onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
                                                                 className="w-6 h-6 flex items-center justify-center bg-gray-100 rounded text-gray-600 hover:bg-gray-200"
                                                             >
                                                                 +
-                                                            </button>
+                                                            </button> */}
                                                         </>
                                                     )}
                                                     {item.isFixed && (
-                                                        <span className="w-8 text-center">{item.quantity}</span>
+                                                        <span className="w-full text-center">{item.quantity} {item.product.unit}</span>
                                                     )}
                                                 </div>
                                             </div>
@@ -509,16 +445,15 @@ export default function Products() {
                                                 e.preventDefault(); // Prevent navigation when cart is invalid
                                                 return;
                                             }
-                                            // if (cartItems.length > 0) {
+
                                             if (typeof window !== "undefined") {
                                                 localStorage.setItem('cartItems', JSON.stringify(cartItems));
-                                                localStorage.setItem('selectedBox', JSON.stringify(selectedBox));
+                                                //localStorage.setItem('selectedBox', JSON.stringify(selectedBox));
                                             }
                                         }}
                                         aria-disabled={!isCartValid}
                                         tabIndex={!isCartValid ? -1 : undefined}
-                                        className={`w-full bg-fresh-green text-white py-3 rounded-xl font-semibold hover:opacity-90 block text-center  transition-colors 
-                                            ${!isCartValid ? "bg-gray-300 cursor-not-allowed" : ""}`}
+                                        className={`w-full bg-fresh-green text-white py-3 rounded-xl font-semibold hover:opacity-90 block text-center  transition-colors  ${!isCartValid ? "bg-gray-300 cursor-not-allowed" : ""}`}
                                     >
                                         Proceed to Checkout
                                     </Link>

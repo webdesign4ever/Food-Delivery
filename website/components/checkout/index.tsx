@@ -1,34 +1,17 @@
 'use client'
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-//import { useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-//import { useForm } from "react-hook-form";
-//import { zodResolver } from "@hookform/resolvers/zod";
-//import { z } from "zod";
 import { useToast } from "@/hooks/use-toast";
 import type { BoxType, CartItem, Customer, OrderData } from "@/lib/types";
 import { Download, FileText, ArrowLeft } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { BASE_URL, queryClient } from "@/lib/queryClient";
-
-// const customerSchema = z.object({
-//     firstName: z.string().min(1, "First name is required"),
-//     lastName: z.string().min(1, "Last name is required"),
-//     email: z.string().email("Valid email is required"),
-//     phone: z.string().min(11, "Valid phone number is required"),
-//     address: z.string().min(10, "Complete address is required"),
-//     city: z.string().min(1, "City is required"),
-//     paymentMethod: z.enum(["easypaisa", "jazzcash"]),
-//     specialInstructions: z.string().optional(),
-// });
-
-// type CustomerFormData = z.infer<typeof customerSchema>;
 
 export type PaymentMethod = "easypaisa" | "jazzcash";
 
@@ -60,7 +43,6 @@ interface Receipt {
 const Checkout = () => {
 
     const router = useRouter();
-    //const [, setLocation] = useLocation();
     const { toast } = useToast();
     const [receipt, setReceipt] = useState<Receipt | null>(null);
     const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
@@ -81,20 +63,6 @@ const Checkout = () => {
     });
 
     const selectedBox = boxTypes.find(box => box.id === parseInt(boxId || '0'));
-
-    // const form = useForm<CustomerFormData>({
-    //     resolver: zodResolver(customerSchema),
-    //     defaultValues: {
-    //         firstName: "",
-    //         lastName: "",
-    //         email: "",
-    //         phone: "",
-    //         address: "",
-    //         city: "",
-    //         paymentMethod: "easypaisa",
-    //         specialInstructions: "",
-    //     },
-    // });
 
     const [formData, setFormData] = useState<CustomerFormData>({
         firstName: "",
@@ -152,15 +120,17 @@ const Checkout = () => {
 
     const calculateTotal = () => {
         // Only calculate the cost of added items, no box price
-        return cartItems.reduce((sum, item) => {
-            return sum + (parseFloat(item.product.price) * item.quantity);
-        }, 0).toFixed(2);
+        // return cartItems.reduce((sum, item) => {
+        //     return sum + (parseFloat(item.product.price) * item.quantity);
+        // }, 0).toFixed(2);
+        return selectedBox ? selectedBox.price : "0.00"
     };
 
     const calculateSubtotal = () => {
-        return cartItems.reduce((sum, item) => {
-            return sum + (parseFloat(item.product.price) * item.quantity);
-        }, 0).toFixed(2);
+        // return cartItems.reduce((sum, item) => {
+        //     return sum + (parseFloat(item.product.price) * item.quantity);
+        // }, 0).toFixed(2);
+        return selectedBox ? selectedBox.price : "0.00"
     };
 
     const createOrderMutation = useMutation({
@@ -194,7 +164,7 @@ const Checkout = () => {
                 boxType: selectedBox!,
                 items: cartItems,
                 subtotal: calculateSubtotal(),
-                boxPrice: "0.00",
+                boxPrice: selectedBox!.price,
                 total: calculateTotal(),
                 //paymentMethod: form.getValues('paymentMethod'),
                 paymentMethod: formData.paymentMethod,
@@ -322,8 +292,6 @@ const Checkout = () => {
               <tr>
                 <th>Item</th>
                 <th>Quantity</th>
-                <th>Unit Price</th>
-                <th>Total</th>
               </tr>
             </thead>
             <tbody>
@@ -331,8 +299,6 @@ const Checkout = () => {
                 <tr>
                   <td>${item.sourceBoxType?.name} - ${item.product.name}</td>
                   <td>${item.quantity} ${item.product.unit}</td>
-                  <td>Rs. ${item.product.price}</td>
-                  <td>Rs. ${(parseFloat(item.product.price) * item.quantity).toFixed(2)}</td>
                 </tr>
               `).join('')}
             </tbody>
@@ -431,7 +397,8 @@ const Checkout = () => {
                                                             <p className="text-sm text-gray-600">{items.length} item{items.length > 1 ? 's' : ''} selected</p>
                                                         </div>
                                                         <div className="text-right">
-                                                            <p className="font-medium">Rs. {boxTotal.toFixed(2)}</p>
+                                                            <p className="font-medium">Rs. {receipt.boxPrice}</p>
+                                                            {/* <p className="font-medium">Rs. {boxTotal.toFixed(2)}</p> */}
                                                         </div>
                                                     </div>
 
@@ -442,7 +409,7 @@ const Checkout = () => {
                                                                 <p className="text-sm text-gray-600">{item.product.category}</p>
                                                             </div>
                                                             <div className="text-right">
-                                                                <p className="font-medium">Rs. {(parseFloat(item.product.price) * item.quantity).toFixed(2)}</p>
+                                                                {/* <p className="font-medium">Rs. {(parseFloat(item.product.price) * item.quantity).toFixed(2)}</p> */}
                                                                 <p className="text-sm text-gray-600">Qty: {item.quantity} {item.product.unit}</p>
                                                             </div>
                                                         </div>
@@ -709,7 +676,7 @@ const Checkout = () => {
                                 {/* Group items by source box type */}
                                 {(() => {
                                     const itemsByBoxType = cartItems.reduce((acc, item) => {
-                                        const boxName = item.sourceBoxType?.name || 'Mixed Selection';
+                                        const boxName = item.sourceBoxType!.name;
                                         if (!acc[boxName]) {
                                             acc[boxName] = [];
                                         }
@@ -725,7 +692,8 @@ const Checkout = () => {
                                                     <p className="text-sm text-gray-600">{items.length} item{items.length > 1 ? 's' : ''} selected</p>
                                                 </div>
                                                 <span className="font-semibold text-gray-500">
-                                                    Rs. {items.reduce((sum, item) => sum + (parseFloat(item.product.price) * item.quantity), 0).toFixed(2)}
+                                                    {/* Rs. {items.reduce((sum, item) => sum + (parseFloat(item.product.price) * item.quantity), 0).toFixed(2)} */}
+                                                    Rs. {selectedBox ? selectedBox.price : "0.00"}
                                                 </span>
                                             </div>
 
@@ -735,7 +703,7 @@ const Checkout = () => {
                                                         <span className="font-medium">{item.product.name}</span>
                                                         <p className="text-sm text-gray-600">{item.quantity} {item.product.unit}</p>
                                                     </div>
-                                                    <span className="font-semibold">Rs. {(parseFloat(item.product.price) * item.quantity).toFixed(2)}</span>
+                                                    {/* <span className="font-semibold">Rs. {(parseFloat(item.product.price) * item.quantity).toFixed(2)}</span> */}
                                                 </div>
                                             ))}
                                         </div>

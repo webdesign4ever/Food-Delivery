@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,36 +11,13 @@ interface ItemCustomizerProps {
   onAddToCart: (product: Product, quantity: number) => void;
   cartItems: CartItem[];
   selectedBox: BagForm | null;
-  //onReplaceCustomizable: (oldProductId: number, newProduct: Product, quantity: number) => void;
   //maxItems?: number; // Made optional since we're removing limits
 }
 
-export default function ItemCustomizer({ products, onAddToCart, cartItems, selectedBox,
-  // onReplaceCustomizable 
-}: ItemCustomizerProps) {
+export default function ItemCustomizer({ products, onAddToCart, cartItems, selectedBox, }: ItemCustomizerProps) {
   const [quantities, setQuantities] = useState<Record<number, number>>({});
 
   //const currentItemCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
-
-  // Initialize quantities
-  // useEffect(() => {
-  //   const initialQuantities = products.reduce((acc, product) => {
-  //     const cartItem = cartItems.find(item => item.product.id === product.id);
-  //     acc[product.id] = cartItem ? cartItem.quantity : 1;
-  //     return acc;
-  //   }, {} as Record<number, number>);
-  //   setQuantities(initialQuantities);
-  // }, [products, cartItems]);
-
-  // Get customizable items from selected box
-  // const customizableItems = useMemo(() => {
-  //   return selectedBox?.customizableItems || [];
-  // }, [selectedBox]);
-
-  // Check if product is customizable
-  // const isCustomizableItem = useCallback((productId: number) => {
-  //   return customizableItems.includes(productId);
-  // }, [customizableItems]);
 
   // Total items count 
   const totalItemsCount = useMemo(() =>
@@ -55,54 +32,6 @@ export default function ItemCustomizer({ products, onAddToCart, cartItems, selec
     setQuantities(prev => ({ ...prev, [productId]: quantity }));
   };
 
-  // const handleAddToCart = (product: Product) => {
-  //   const quantity = getQuantity(product.id);
-
-  //   if (isCustomizableItem(product.id)) {
-  //     // Find the customizable item to replace
-  //     const itemToReplace = cartItems.find(item =>
-  //       customizableItems.includes(item.product.id) &&
-  //       !selectedBox?.fixedItems.includes(item.product.id)
-  //     );
-  //     console.log(isCustomizableItem(product.id))
-  //     console.log(itemToReplace)
-
-  //     if (itemToReplace) {
-  //       onReplaceCustomizable(itemToReplace.product.id, product, quantity);
-  //     } else {
-  //       onAddToCart(product, quantity);
-  //     }
-  //   } else {
-  //     onAddToCart(product, quantity);
-  //   }
-  // };
-  // const handleAddToCart = (product: Product) => {
-  //   const quantity = getQuantity(product.id);
-
-  //   // Check if this is a customizable product
-  //   const isCustomizable = selectedBox?.customizableItems.includes(product.id);
-
-  //   // Check if it's already in cart as customizable item
-  //   const existingCustomizable = cartItems.find(item =>
-  //     item.product.id === product.id &&
-  //     selectedBox?.customizableItems.includes(item.product.id)
-  //   );
-
-  //   if (isCustomizable && !existingCustomizable) {
-  //     // Find first customizable item that can be replaced
-  //     const customizableItemToReplace = cartItems.find(item =>
-  //       selectedBox?.customizableItems.includes(item.product.id) &&
-  //       !selectedBox?.fixedItems.includes(item.product.id)
-  //     );
-
-  //     if (customizableItemToReplace) {
-  //       onReplaceCustomizable(customizableItemToReplace.product.id, product, quantity);
-  //       return;
-  //     }
-  //   }
-  //   // Default case - add normally
-  //   onAddToCart(product, quantity);
-  // };
   const handleAddToCart = (product: Product) => {
     const quantity = getQuantity(product.id);
     onAddToCart(product, quantity);
@@ -194,10 +123,11 @@ export default function ItemCustomizer({ products, onAddToCart, cartItems, selec
                 )}
 
                 <div className="flex justify-between items-center mb-4">
-                  <span className="text-lg font-bold text-fresh-green">
+                  {/* <span className="text-lg font-bold text-fresh-green">
                     Rs. {product.price}
                   </span>
-                  <span className="text-gray-500 text-sm">per {product.unit}</span>
+                  <span className="text-gray-500 text-sm">per {product.unit}</span> */}
+                  <span className="text-gray-500 text-sm">{getQuantity(product.id)} {product.unit}</span>
                 </div>
 
                 {isInCart(product.id) ? (
@@ -224,7 +154,7 @@ export default function ItemCustomizer({ products, onAddToCart, cartItems, selec
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    <div className="flex items-center justify-between">
+                    {/* <div className="flex items-center justify-between">
                       <span className="text-sm text-gray-600">Quantity:</span>
                       <div className="flex items-center space-x-2">
                         <Button
@@ -243,7 +173,7 @@ export default function ItemCustomizer({ products, onAddToCart, cartItems, selec
                           value={getQuantity(product.id)}
                           onChange={(e) => setQuantity(product.id, parseInt(e.target.value) || 1)}
                           className="w-16 text-center"
-                          disabled={fixedItem}
+                          readOnly
                         />
                         <Button
                           size="icon"
@@ -255,7 +185,7 @@ export default function ItemCustomizer({ products, onAddToCart, cartItems, selec
                           <Plus className="h-4 w-4" />
                         </Button>
                       </div>
-                    </div>
+                    </div> */}
 
                     <Button
                       onClick={() => handleAddToCart(product)}

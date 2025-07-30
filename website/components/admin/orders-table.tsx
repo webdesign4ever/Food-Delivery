@@ -8,8 +8,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { Search, Eye, Edit, CheckCircle, Clock, Truck, X } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
-import type { Order, Customer, BoxType } from "@/lib/types";
+import type { Order, Customer, BoxType, OrderData } from "@/lib/types";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "../ui/dialog";
+import { FaWhatsapp } from "react-icons/fa";
 
 interface OrdersTableProps {
   orders: (Order & { customer: Customer; bagType: BoxType; orderItems: any[] })[];
@@ -132,6 +133,40 @@ export default function OrdersTable({ orders }: OrdersTableProps) {
     (sum, item) => sum + parseFloat(item.unitPrice) * item.quantity,
     0
   );
+
+  const buildWhatsAppMessage = (order: typeof filteredOrders[0]) => {
+    console.log(order)
+    const itemsText = order.orderItems.map((item) =>
+      `• ${item.product.name} (${item.product.category}) - Qty: ${item.quantity} ${item.product.unit}`
+    ).join('\n');
+
+    const message = `
+*FreshBox Order Details*
+
+🍽 *Order Info*
+
+📦 *Order Number:* #FB-${order.id.toString().padStart(3, '0')}
+📅 *Date:* ${new Date(order.createdAt).toLocaleDateString()}
+📌 *Status:* ${order.orderStatus}
+💳 *Payment:* ${order.paymentMethod.toUpperCase()} (${order.paymentStatus})
+📝 *Instructions:* ${order.specialInstructions || "N/A"}
+
+👤 *Customer Info*
+• Name: ${order.customer.firstName} ${order.customer.lastName}
+• Phone: ${order.customer.phone}
+• Email: ${order.customer.email}
+• Address: ${order.customer.address}, ${order.customer.city}
+
+🧺 *Order Details:*
+📦 *Bag:* ${order.bagType.name} (${order.orderItems.length} item${order.orderItems.length > 1 ? 's' : ''})
+
+${itemsText}
+
+💰 *Total:* Rs. ${order.totalAmount}`
+      .trim();
+
+    return message;
+  };
 
   return (
     <div className="space-y-6">
@@ -282,6 +317,21 @@ export default function OrdersTable({ orders }: OrdersTableProps) {
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center space-x-2">
+                          <Button size="sm" variant="outline"
+                            onClick={() => {
+                              //setSelectedOrder(order); // optional if used elsewhere
+                              const message = buildWhatsAppMessage(order);
+                              console.log("message", JSON.stringify(message));
+                              const encodedMessage = encodeURIComponent(message);
+                              console.log("encodedMessage", encodedMessage)
+                              window.open(`https://web.whatsapp.com/send?phone=923088248017&text=${encodedMessage}`, "_blank");
+
+                              // const whatsappUrl = `https://wa.me/923088248017?text=${encodedMessage}`; // replace <PHONE_NUMBER>
+                              // window.open(whatsappUrl, '_blank');
+                            }}
+                          >
+                            <FaWhatsapp className="w-4 h-4" />
+                          </Button>
 
                           <Button size="sm" variant="outline"
                             onClick={() => {
@@ -377,7 +427,8 @@ export default function OrdersTable({ orders }: OrdersTableProps) {
                             <p className="text-sm text-gray-600">{items.length} item{items.length > 1 ? 's' : ''}</p>
                           </div>
                           <div className="text-right">
-                            <p className="font-medium">Rs. {boxTotal.toFixed(2)}</p>
+                            <p className="font-medium">Rs. {selectedOrder.bagType.price}</p>
+                            {/* <p className="font-medium">Rs. {boxTotal.toFixed(2)}</p> */}
                           </div>
                         </div>
 
@@ -388,7 +439,7 @@ export default function OrdersTable({ orders }: OrdersTableProps) {
                               <p className="text-sm text-gray-600">{item.product.category}</p>
                             </div>
                             <div className="text-right">
-                              <p className="font-medium">Rs. {(parseFloat(item.unitPrice) * item.quantity).toFixed(2)}</p>
+                              {/* <p className="font-medium">Rs. {(parseFloat(item.unitPrice) * item.quantity).toFixed(2)}</p> */}
                               <p className="text-sm text-gray-600">Qty: {item.quantity} {item.product.unit}</p>
                             </div>
                           </div>
@@ -404,7 +455,8 @@ export default function OrdersTable({ orders }: OrdersTableProps) {
                 <div className="space-y-2">
                   <div className="flex justify-between">
                     <span>Items Subtotal:</span>
-                    <span>Rs. {boxTotal.toFixed(2)}</span>
+                    {/* <span>Rs. {boxTotal.toFixed(2)}</span> */}
+                    <span>Rs. {selectedOrder.totalAmount}</span>
                   </div>
                   <div className="flex justify-between text-lg font-bold text-fresh-green">
                     <span>Total Amount:</span>

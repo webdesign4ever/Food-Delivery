@@ -12,8 +12,8 @@ export interface BagForm {
   name: string;
   category: "fruit" | "vegetable" | "mixed";
   price: string;
-  fixedItems: string[],
-  customizableItems: string[],
+  fixedItems: number[],
+  customizableItems: number[],
   itemsLimit: number;
   description?: string | null;
   isActive: boolean;
