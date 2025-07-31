@@ -1,5 +1,6 @@
 //import { Link } from "wouter";
 import { Leaf, Phone, Mail, MapPin, Facebook, Instagram } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { FaWhatsapp } from "react-icons/fa";
 
@@ -28,12 +29,19 @@ export default function Footer() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid lg:grid-cols-4 md:grid-cols-2 gap-8 mb-12">
           {/* Company Info */}
-          <div className="space-y-6">
+          <div className="space-y-3">
             <div className="flex items-center space-x-2">
-              <div className="w-10 h-10 gradient-green-yellow rounded-lg flex items-center justify-center">
+              {/* <div className="w-10 h-10 gradient-green-yellow rounded-lg flex items-center justify-center">
                 <Leaf className="text-white text-xl" />
               </div>
-              <span className="text-2xl font-bold text-white">FreshBox</span>
+              <span className="text-2xl font-bold text-white">FreshBox</span> */}
+              <Image
+                className="lg:w-56 xl:w-64"
+                src="/images/logo/logo.svg"
+                width={260}
+                height={66}
+                alt="logo"
+              />
             </div>
             <p className="text-gray-300 leading-relaxed">
               Delivering farm-fresh fruits and vegetables to your doorstep with premium quality guarantee and sustainable farming practices.

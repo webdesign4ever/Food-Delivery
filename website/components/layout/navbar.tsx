@@ -6,6 +6,7 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTr
 import { Menu, Leaf } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import Image from "next/image";
 
 export default function Navbar() {
     //const [location] = useLocation();
@@ -54,10 +55,17 @@ export default function Navbar() {
                     {/* Logo */}
                     <Link href="/" className="flex items-center space-x-2">
                         {/* <a className="flex items-center space-x-2"> */}
-                        <div className="w-10 h-10 gradient-green-yellow rounded-lg flex items-center justify-center">
+                        {/* <div className="w-10 h-10 gradient-green-yellow rounded-lg flex items-center justify-center">
                             <Leaf className="text-white text-xl" />
                         </div>
-                        <span className="text-2xl font-bold text-fresh-green">FreshBox</span>
+                        <span className="text-2xl font-bold text-fresh-green">FreshBox</span> */}
+                        <Image
+                            className="w-56 lg:w-52 xl:w-64"
+                            src="/images/logo/logo.svg"
+                            width={260}
+                            height={66}
+                            alt="logo"
+                        />
                         {/* </a> */}
                     </Link>
 
@@ -85,7 +93,7 @@ export default function Navbar() {
                             </SheetTrigger>
                             <SheetContent side="right">
                                 <SheetHeader className="hidden">
-                                    <SheetTitle className=" flex items-center space-x-2">
+                                    <SheetTitle className="flex items-center space-x-2">
                                         <div className="w-10 h-10 gradient-green-yellow rounded-lg flex items-center justify-center">
                                             <Leaf className="text-white text-xl" />
                                         </div>

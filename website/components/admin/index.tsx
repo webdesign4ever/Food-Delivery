@@ -394,9 +394,15 @@ const Admin = () => {
                 {/* Header */}
                 <div className="flex items-center justify-between mb-8 pb-6 border-b border-gray-200">
                     <div className="flex items-center space-x-4">
-                        <div className="w-12 h-12 gradient-green-yellow rounded-lg flex items-center justify-center">
+                        {/* <div className="w-12 h-12 gradient-green-yellow rounded-lg flex items-center justify-center">
                             <Package className="text-white w-6 h-6" />
-                        </div>
+                        </div> */}
+                        <Image
+                            src="/images/logo/icon.svg"
+                            width={50}
+                            height={50}
+                            alt="logo"
+                        />
                         <div>
                             <h1 className="text-3xl font-bold text-dark-text">FreshBox Admin</h1>
                             <p className="text-gray-500">Dashboard Overview</p>
