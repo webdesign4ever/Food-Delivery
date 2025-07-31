@@ -324,9 +324,9 @@ ${itemsText}
                               console.log("message", JSON.stringify(message));
                               const encodedMessage = encodeURIComponent(message);
                               console.log("encodedMessage", encodedMessage)
-                              window.open(`https://web.whatsapp.com/send?phone=923088248017&text=${encodedMessage}`, "_blank");
+                              window.open(`https://web.whatsapp.com/send?phone=03069666555&text=${encodedMessage}`, "_blank");
 
-                              // const whatsappUrl = `https://wa.me/923088248017?text=${encodedMessage}`; // replace <PHONE_NUMBER>
+                              // const whatsappUrl = `https://wa.me/03069666555?text=${encodedMessage}`; // replace <PHONE_NUMBER>
                               // window.open(whatsappUrl, '_blank');
                             }}
                           >

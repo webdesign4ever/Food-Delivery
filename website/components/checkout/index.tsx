@@ -58,7 +58,7 @@ const Checkout = () => {
         cartItems = cartData ? JSON.parse(cartData) : [];
     }
 
-    const { data: boxTypes = [] } = useQuery<BoxType[]>({
+    const { data: boxTypes = [], isLoading: isBagsLoading } = useQuery<BoxType[]>({
         queryKey: ["/bag-types"],
     });
 
@@ -473,6 +473,18 @@ const Checkout = () => {
         );
     }
 
+    // Add loading state to your UI
+    if (isBagsLoading) {
+        return (
+            <div className="min-h-screen bg-light-green-tint py-8 flex items-center justify-center">
+                <div className="text-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-fresh-green mx-auto"></div>
+                    <p className="mt-4 text-dark-text">Loading...</p>
+                </div>
+            </div>
+        );
+    }
+
     // Show empty cart message only if no receipt and no items
     if (!selectedBox || cartItems.length === 0) {
         return (
@@ -726,7 +738,11 @@ const Checkout = () => {
 
                             <Button
                                 //onClick={() => setLocation('/products')}
-                                onClick={() => router.push("/products")}
+                                onClick={() => {
+                                    //router.push("/products")
+                                    router.push(`/products?boxId=${selectedBox.id}`)
+                                    localStorage.removeItem('cartItems');
+                                }}
                                 variant="outline"
                                 className="w-full"
                             >

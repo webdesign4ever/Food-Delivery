@@ -252,14 +252,13 @@ export default function Products() {
     //     );
     // };
 
-
     // Add loading state to your UI
     if (isProductsLoading) {
         return (
             <div className="min-h-screen bg-light-green-tint py-8 flex items-center justify-center">
                 <div className="text-center">
                     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-fresh-green mx-auto"></div>
-                    <p className="mt-4 text-dark-text">Loading your box...</p>
+                    <p className="mt-4 text-dark-text">Loading...</p>
                 </div>
             </div>
         );
@@ -448,7 +447,6 @@ export default function Products() {
 
                                             if (typeof window !== "undefined") {
                                                 localStorage.setItem('cartItems', JSON.stringify(cartItems));
-                                                //localStorage.setItem('selectedBox', JSON.stringify(selectedBox));
                                             }
                                         }}
                                         aria-disabled={!isCartValid}
